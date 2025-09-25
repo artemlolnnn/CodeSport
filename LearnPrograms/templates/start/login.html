@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login & Sign Up</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(120deg, #6a11cb, #2575fc);
+            padding: 20px;
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+            width: 400px;
+            max-width: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .form-container {
+            display: flex;
+            width: 200%;
+            transition: transform 0.6s ease-in-out;
+        }
+        
+        .login-container, .signup-container {
+            padding: 30px;
+            width: 50%;
+        }
+        
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .form-control {
+            margin-bottom: 15px;
+            position: relative;
+        }
+        
+        .form-control label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+        }
+        
+        .form-control input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .form-control input:focus {
+            outline: none;
+            border-color: #6a11cb;
+        }
+        
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(120deg, #6a11cb, #2575fc);
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+        
+        button:hover {
+            opacity: 0.9;
+        }
+        
+        .toggle-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .toggle-container p {
+            color: #555;
+            font-size: 14px;
+        }
+        
+        .toggle {
+            color: #6a11cb;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        
+        .message {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            text-align: center;
+        }
+        
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        @media (max-width: 500px) {
+            .container {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="form-container">
+            <div class="login-container">
+                <h2>Login to Your Account</h2>
+                
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="message {% if message.tags %}{{ message.tags }}{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+                
+                <form method="POST" action="">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="login">
+                    <div class="form-control">
+                        <label for="login-username">Username</label>
+                        <input type="text" id="login-username" name="username" placeholder="Enter your username" required>
+                    </div>
+                    <div class="form-control">
+                        <label for="login-password">Password</label>
+                        <input type="password" id="login-password" name="password" placeholder="Enter your password" required>
+                    </div>
+                    <button type="submit">Login</button>
+                </form>
+                <div class="toggle-container">
+                    <p>Don't have an account? <span class="toggle" onclick="toggleForm()">Sign Up</span></p>
+                </div>
+            </div>
+            
+            <div class="signup-container">
+                <h2>Create Your Account</h2>
+                
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="message {% if message.tags %}{{ message.tags }}{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+                
+                <form method="POST" action="">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="signup">
+                    <div class="form-control">
+                        <label for="signup-username">Username</label>
+                        <input type="text" id="signup-username" name="username" placeholder="Choose a username" required>
+                    </div>
+                    <div class="form-control">
+                        <label for="signup-email">Email</label>
+                        <input type="email" id="signup-email" name="email" placeholder="Enter your email" required>
+                    </div>
+                    <div class="form-control">
+                        <label for="signup-password">Password</label>
+                        <input type="password" id="signup-password" name="password" placeholder="Create a password" required>
+                    </div>
+                    <div class="form-control">
+                        <label for="signup-confirm">Confirm Password</label>
+                        <input type="password" id="signup-confirm" name="confirm_password" placeholder="Confirm your password" required>
+                    </div>
+                    <button type="submit">Sign Up</button>
+                </form>
+                <div class="toggle-container">
+                    <p>Already have an account? <span class="toggle" onclick="toggleForm()">Login</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleForm() {
+            const formContainer = document.querySelector('.form-container');
+            formContainer.style.transform = formContainer.style.transform === 'translateX(-50%)' 
+                ? 'translateX(0)' 
+                : 'translateX(-50%)';
+        }
+        
+        window.onload = function() {
+            {% if messages %}
+                {% for message in messages %}
+                    {% if 'signup' in message.tags %}
+                        toggleForm();
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        };
+    </script>
+</body>
+</html>

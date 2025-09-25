@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block title %}CodeSport - Edit Test Case{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1>Edit Test Case</h1>
+            <p class="text-muted mb-0">For problem: {{ problem.title }}</p>
+        </div>
+        <a href="{% url 'add_test_cases' problem.id %}" class="btn btn-outline-secondary">Back to Test Cases</a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Test Case Details</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        {% if form.errors %}
+                        <div class="alert alert-danger">
+                            <strong>Please correct the errors below:</strong>
+                            <ul>
+                                {% for field in form %}
+                                    {% for error in field.errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                {% endfor %}
+                                {% for error in form.non_field_errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
+                            {{ form.description }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.input.id_for_label }}" class="form-label">Input</label>
+                            {{ form.input }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.expected_output.id_for_label }}" class="form-label">Expected Output</label>
+                            {{ form.expected_output }}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.order.id_for_label }}" class="form-label">Order</label>
+                                {{ form.order }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check pt-4">
+                                    {{ form.is_public }}
+                                    <label class="form-check-label" for="{{ form.is_public.id_for_label }}">
+                                        {{ form.is_public.label }}
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'add_test_cases' problem.id %}" class="btn btn-secondary me-md-2">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Update Test Case</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

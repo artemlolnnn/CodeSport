@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+
+{% block title %}CodeSport - Solutions for {{ problem.title }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1>Solutions for {{ problem.title }}</h1>
+            <p class="text-muted mb-0">
+                Created by {{ problem.author.username }}
+                {% if is_owner %}
+                <span class="badge bg-info ms-2">Your Problem</span>
+                {% endif %}
+            </p>
+        </div>
+        <a href="{% url 'problem_detail' problem.id %}" class="btn btn-outline-secondary">Back to Problem</a>
+    </div>
+
+    <div class="row">
+        {% if is_owner %}
+        <div class="col-lg-5">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Add New Solution</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="{{ form.language.id_for_label }}" class="form-label">Language</label>
+                            {{ form.language }}
+                        </div>
+                        <div class="mb-3">
+                            <label for="{{ form.code.id_for_label }}" class="form-label">Solution Code</label>
+                            {{ form.code }}
+                        </div>
+                        <div class="mb-3 form-check">
+                            {{ form.is_public }}
+                            <label class="form-check-label" for="{{ form.is_public.id_for_label }}">
+                                Make this solution public
+                            </label>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">Add Solution</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <a href="{% url 'add_test_cases' problem.id %}" class="btn btn-outline-primary w-100 mb-2">Manage Test Cases</a>
+                    <a href="{% url 'user_problems' %}" class="btn btn-outline-secondary w-100">View All My Problems</a>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-lg-12">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                Only the problem owner can add solutions to this problem.
+            </div>
+        </div>
+        {% endif %}
+        
+        <div class="{% if is_owner %}col-lg-7{% else %}col-lg-12{% endif %}">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Existing Solutions ({{ solutions.count }})</h5>
+                    <span class="badge bg-secondary">{{ public_solutions_count }} public</span>
+                </div>
+                <div class="card-body">
+                    {% if solutions %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Language</th>
+                                    <th>Code Preview</th>
+                                    <th>Visibility</th>
+                                    {% if is_owner %}
+                                    <th>Actions</th>
+                                    {% endif %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for solution in solutions %}
+                                <tr>
+                                    <td>{{ solution.get_language_display }}</td>
+                                    <td>
+                                        <pre class="mb-0"><code>{{ solution.code|truncatewords:10 }}</code></pre>
+                                    </td>
+                                    <td>
+                                        {% if solution.is_public %}
+                                        <span class="badge bg-success">Public</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Private</span>
+                                        {% endif %}
+                                    </td>
+                                    {% if is_owner %}
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#solutionModal{{ solution.id }}">
+                                            View
+                                        </button>
+                                        <a href="#" class="btn btn-sm btn-outline-danger">Delete</a>
+                                    </td>
+                                    {% endif %}
+                                </tr>
+                                
+                                {% if is_owner %}
+                                <div class="modal fade" id="solutionModal{{ solution.id }}" tabindex="-1">
+                                    <div class="modal-dialog modal-lg">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Solution in {{ solution.get_language_display }}</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <pre><code class="language-{{ solution.language }}">{{ solution.code }}</code></pre>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center">No solutions added yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .code-editor {
+        font-family: 'Roboto Mono', monospace;
+        font-size: 14px;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('pre code').forEach(function(codeBlock) {
+            codeBlock.classList.add('p-3', 'bg-light', 'rounded');
+        });
+    });
+</script>
+{% endblock %}

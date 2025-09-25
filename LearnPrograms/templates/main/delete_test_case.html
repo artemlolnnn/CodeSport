@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %}CodeSport - Delete Test Case{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Delete Test Case</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Warning:</strong> You are about to delete a test case. This action cannot be undone.
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h6>Test Case Details:</h6>
+                        <ul class="list-group">
+                            <li class="list-group-item">
+                                <strong>Problem:</strong> {{ test_case.problem.title }}
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Description:</strong> 
+                                {% if test_case.description %}
+                                    {{ test_case.description }}
+                                {% else %}
+                                    <span class="text-muted">No description</span>
+                                {% endif %}
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Order:</strong> {{ test_case.order }}
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Visibility:</strong> 
+                                {% if test_case.is_public %}
+                                    <span class="badge bg-success">Public</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Private</span>
+                                {% endif %}
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'add_test_cases' test_case.problem.id %}" class="btn btn-secondary me-md-2">Cancel</a>
+                            <button type="submit" class="btn btn-danger">Confirm Delete</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+
+{% block title %}CodeSport - {{ problem.title }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1>{{ problem.title }}</h1>
+            <div class="d-flex align-items-center">
+                {% if problem.difficulty == 'easy' %}
+                <span class="badge bg-success me-2">Easy</span>
+                {% elif problem.difficulty == 'medium' %}
+                <span class="badge bg-warning me-2">Medium</span>
+                {% else %}
+                <span class="badge bg-danger me-2">Hard</span>
+                {% endif %}
+                <span class="text-muted">Created by {{ problem.author.username }}</span>
+                
+                {% if problem.author == user %}
+                <span class="badge bg-info ms-2">Your Problem</span>
+                {% endif %}
+            </div>
+        </div>
+        <div>
+            {% if problem.author == user %}
+            <div class="btn-group">
+                <a href="{% url 'add_test_cases' problem.id %}" class="btn btn-outline-primary me-2">Manage Test Cases</a>
+                <a href="{% url 'add_solutions' problem.id %}" class="btn btn-outline-success me-2">Manage Solutions</a>
+            </div>
+            {% endif %}
+            <a href="{% url 'submit_solution' problem.id %}" class="btn btn-primary">Solve Problem</a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Problem Description</h5>
+                </div>
+                <div class="card-body">
+                    <div class="problem-description">
+                        {{ problem.description|linebreaks }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Constraints</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">Time Limit: {{ problem.time_limit }} seconds</li>
+                        <li class="list-group-item">Memory Limit: {{ problem.memory_limit }} MB</li>
+                    </ul>
+                </div>
+            </div>
+            
+            {% if public_test_cases %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Sample Test Cases</h5>
+                </div>
+                <div class="card-body">
+                    {% for test_case in public_test_cases %}
+                    <div class="mb-3">
+                        <h6>Test Case #{{ forloop.counter }}</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Input:</strong>
+                                <pre class="bg-light p-2"><code>{{ test_case.input }}</code></pre>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Expected Output:</strong>
+                                <pre class="bg-light p-2"><code>{{ test_case.expected_output }}</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                    {% if not forloop.last %}<hr>{% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Problem Stats</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Total Submissions:</span>
+                        <strong>{{ problem.submission_set.count }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Accepted Solutions:</span>
+                        <strong>{{ problem.accepted_submissions.count }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>Acceptance Rate:</span>
+                        <strong>
+                            {% if problem.submission_set.count > 0 %}
+                                {{ problem.accepted_submissions.count|divisibleby:problem.submission_set.count|floatformat:2 }}%
+                            {% else %}
+                                0%
+                            {% endif %}
+                        </strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Actions</h5>
+                </div>
+                <div class="card-body">
+                    <a href="{% url 'submit_solution' problem.id %}" class="btn btn-primary w-100 mb-2">Submit Solution</a>
+                    <a href="{% url 'add_solutions' problem.id %}" class="btn btn-outline-info w-100 mb-2">View Solutions</a>
+                    <a href="{% url 'problems' %}" class="btn btn-outline-secondary w-100">Back to Problems</a>
+                    
+                    {% if problem.author == user %}
+                    <hr>
+                    <h6 class="mt-3">Owner Options</h6>
+                    <a href="{% url 'add_test_cases' problem.id %}" class="btn btn-outline-primary w-100 mb-2">Manage Test Cases</a>
+                    <a href="{% url 'add_solutions' problem.id %}" class="btn btn-outline-success w-100">Manage Solutions</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

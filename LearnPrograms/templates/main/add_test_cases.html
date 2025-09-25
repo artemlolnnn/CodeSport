@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+
+{% block title %}CodeSport - Test Cases for {{ problem.title }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1>Test Cases for {{ problem.title }}</h1>
+            <p class="text-muted mb-0">Add test cases to validate user solutions</p>
+        </div>
+        <div>
+            <a href="{% url 'add_solutions' problem.id %}" class="btn btn-success me-2">Next: Add Solutions</a>
+            <a href="{% url 'problem_detail' problem.id %}" class="btn btn-outline-secondary">Back to Problem</a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-5">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Add New Test Case</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        {% if form.errors %}
+                        <div class="alert alert-danger">
+                            <strong>Please correct the errors below:</strong>
+                            <ul>
+                                {% for field in form %}
+                                    {% for error in field.errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                {% endfor %}
+                                {% for error in form.non_field_errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
+                            {{ form.description }}
+                            <div class="form-text">Brief description of what this test case checks</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.input.id_for_label }}" class="form-label">Input</label>
+                            {{ form.input }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.expected_output.id_for_label }}" class="form-label">Expected Output</label>
+                            {{ form.expected_output }}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.order.id_for_label }}" class="form-label">Order</label>
+                                {{ form.order }}
+                                <div class="form-text">Execution order (lower numbers first)</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check pt-4">
+                                    {{ form.is_public }}
+                                    <label class="form-check-label" for="{{ form.is_public.id_for_label }}">
+                                        {{ form.is_public.label }}
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">Add Test Case</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Test Case Tips</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="mb-0 small">
+                        <li>Include both simple and edge cases</li>
+                        <li>Test with minimum and maximum input sizes</li>
+                        <li>Add cases that might cause common errors</li>
+                        <li>Make some test cases public to help users understand expected behavior</li>
+                        <li>Keep some test cases hidden to prevent solution gaming</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-7">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Existing Test Cases ({{ test_cases.count }})</h5>
+                    <span class="badge bg-secondary">{{ public_test_cases_count }} public</span>
+                </div>
+                <div class="card-body">
+                    {% if test_cases %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Order</th>
+                                    <th>Description</th>
+                                    <th>Input Preview</th>
+                                    <th>Output Preview</th>
+                                    <th>Visibility</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for test_case in test_cases %}
+                                <tr>
+                                    <td>{{ test_case.order }}</td>
+                                    <td>
+                                        {% if test_case.description %}
+                                            {{ test_case.description }}
+                                        {% else %}
+                                            <span class="text-muted">No description</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-truncate" style="max-width: 120px;">
+                                        <code>{{ test_case.input|truncatewords:3 }}</code>
+                                    </td>
+                                    <td class="text-truncate" style="max-width: 120px;">
+                                        <code>{{ test_case.expected_output|truncatewords:3 }}</code>
+                                    </td>
+                                    <td>
+                                        {% if test_case.is_public %}
+                                        <span class="badge bg-success">Public</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Private</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'edit_test_case' test_case.id %}" class="btn btn-outline-primary">Edit</a>
+                                            <a href="{% url 'delete_test_case' test_case.id %}" class="btn btn-outline-danger">Delete</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-vial fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No test cases added yet. Add your first test case to validate solutions.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

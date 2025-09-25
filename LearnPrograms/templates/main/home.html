@@ -1,0 +1,289 @@
+{% extends 'base.html' %}
+
+{% block title %}CodeSport - Home{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="hero-title">Welcome {{request.user.username}}!</h1>
+                <p class="hero-subtitle">Ready to solve some problems? We're here to help you improve your coding skills and compete with programmers worldwide.</p>
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="{% url 'problems' %}" class="btn btn-primary btn-lg">Solve Problems</a>
+                    <a href="{% url 'contests' %}" class="btn btn-outline-light btn-lg">Join Contest</a>
+                </div>
+            </div>
+            <div class="col-lg-6 d-none d-lg-block text-center">
+                <img src="https://images.unsplash.com/photo-1587620962725-abab7fe55159?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" alt="Coding Illustration" class="img-fluid rounded" style="max-height: 300px;">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Stats Section -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row text-center">
+            <div class="col-md-3 col-6 mb-4">
+                <div class="stats-number">1,258</div>
+                <div class="stats-label">Problems</div>
+            </div>
+            <div class="col-md-3 col-6 mb-4">
+                <div class="stats-number">24,795</div>
+                <div class="stats-label">Active Users</div>
+            </div>
+            <div class="col-md-3 col-6 mb-4">
+                <div class="stats-number">586</div>
+                <div class="stats-label">Contests</div>
+            </div>
+            <div class="col-md-3 col-6 mb-4">
+                <div class="stats-number">3.2M</div>
+                <div class="stats-label">Submissions</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Problems -->
+<section class="py-5">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Featured Problems</h2>
+            <a href="{% url 'problems' %}" class="btn btn-sm btn-outline-primary">View All</a>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="card problem-card difficulty-easy">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="badge bg-success">Easy</span>
+                            <span class="text-muted">#123</span>
+                        </div>
+                        <h5 class="card-title">Two Sum</h5>
+                        <p class="card-text">Given an array of integers, return indices of the two numbers such that they add up to a specific target.</p>
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">72% Success</span>
+                            <a href="#" class="btn btn-sm btn-primary">Solve</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-4">
+                <div class="card problem-card difficulty-medium">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="badge bg-warning">Medium</span>
+                            <span class="text-muted">#456</span>
+                        </div>
+                        <h5 class="card-title">Reverse Linked List</h5>
+                        <p class="card-text">Reverse a singly linked list without using extra space and in one pass.</p>
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">45% Success</span>
+                            <a href="#" class="btn btn-sm btn-primary">Solve</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-4">
+                <div class="card problem-card difficulty-hard">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="badge bg-danger">Hard</span>
+                            <span class="text-muted">#789</span>
+                        </div>
+                        <h5 class="card-title">Median of Arrays</h5>
+                        <p class="card-text">Find the median of two sorted arrays with overall runtime complexity of O(log (m+n)).</p>
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">28% Success</span>
+                            <a href="#" class="btn btn-sm btn-primary">Solve</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Upcoming Contests -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Upcoming Contests</h2>
+            <a href="{% url 'contests' %}" class="btn btn-sm btn-outline-primary">View All</a>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="badge bg-info">Weekly</span>
+                            <span class="text-muted">Starts in 2 days</span>
+                        </div>
+                        <h5 class="card-title">Weekly Coding Challenge #42</h5>
+                        <p class="card-text">Join our weekly contest with 5 problems of varying difficulty. Open to all participants.</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span><i class="fas fa-users me-1"></i> 1,248 Registered</span>
+                            <a href="#" class="btn btn-sm btn-primary">Register</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="badge bg-danger">Premium</span>
+                            <span class="text-muted">Starts in 5 days</span>
+                        </div>
+                        <h5 class="card-title">Spring Coding Tournament</h5>
+                        <p class="card-text">Annual coding tournament with prizes for top performers. Advanced algorithms and data structures.</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span><i class="fas fa-users me-1"></i> 3,587 Registered</span>
+                            <a href="#" class="btn btn-sm btn-primary">Register</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Recent Activity -->
+<section class="py-5">
+    <div class="container">
+        <h2 class="mb-4">Recent Activity</h2>
+        
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Problem</th>
+                                <th>Language</th>
+                                <th>Result</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>coding_ninja</td>
+                                <td>Two Sum</td>
+                                <td>Python</td>
+                                <td><span class="badge bg-success">Accepted</span></td>
+                                <td>2 minutes ago</td>
+                            </tr>
+                            <tr>
+                                <td>algorithm_master</td>
+                                <td>Reverse Linked List</td>
+                                <td>C++</td>
+                                <td><span class="badge bg-success">Accepted</span></td>
+                                <td>5 minutes ago</td>
+                            </tr>
+                            <tr>
+                                <td>java_dev</td>
+                                <td>Median of Arrays</td>
+                                <td>Java</td>
+                                <td><span class="badge bg-danger">Time Limit Exceeded</span></td>
+                                <td>12 minutes ago</td>
+                            </tr>
+                            <tr>
+                                <td>python_lover</td>
+                                <td>Binary Tree Inorder</td>
+                                <td>Python</td>
+                                <td><span class="badge bg-success">Accepted</span></td>
+                                <td>15 minutes ago</td>
+                            </tr>
+                            <tr>
+                                <td>code_wizard</td>
+                                <td>String Permutations</td>
+                                <td>JavaScript</td>
+                                <td><span class="badge bg-warning">Wrong Answer</span></td>
+                                <td>22 minutes ago</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action -->
+<section class="py-5 bg-primary text-white">
+    <div class="container text-center">
+        <h2 class="mb-3">Ready to Challenge Yourself?</h2>
+        <p class="mb-4">Join thousands of developers sharpening their skills on CodeSport</p>
+        <a href="{% url 'problems' %}" class="btn btn-light btn-lg">Start Solving Problems</a>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .hero-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+    }
+    
+    .hero-subtitle {
+        font-size: 1.2rem;
+        margin-bottom: 2rem;
+        opacity: 0.9;
+    }
+    
+    .stats-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--primary);
+    }
+    
+    .stats-label {
+        font-size: 1rem;
+        color: var(--dark);
+        text-transform: uppercase;
+        font-weight: 500;
+    }
+    
+    .table th {
+        border-top: none;
+        font-weight: 600;
+        color: var(--dark);
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Simple animation for stats counter
+    document.addEventListener('DOMContentLoaded', function() {
+        const statElements = document.querySelectorAll('.stats-number');
+        statElements.forEach(element => {
+            const target = parseInt(element.textContent.replace(/,/g, ''));
+            let current = 0;
+            const increment = target / 50;
+            
+            const updateNumber = () => {
+                if (current < target) {
+                    current += increment;
+                    element.textContent = Math.round(current).toLocaleString();
+                    setTimeout(updateNumber, 25);
+                } else {
+                    element.textContent = target.toLocaleString();
+                }
+            };
+            
+            setTimeout(updateNumber, 500);
+        });
+    });
+</script>
+{% endblock %}
