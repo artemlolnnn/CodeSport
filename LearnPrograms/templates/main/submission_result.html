@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Submission Result - CodeSport{% endblock %}</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #3498db;
+            --secondary: #2c3e50;
+            --accent: #e74c3c;
+            --light: #ecf0f1;
+            --dark: #2c3e50;
+            --success: #2ecc71;
+            --warning: #f39c12;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            padding-bottom: 3rem;
+        }
+
+        .mono-font {
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        .navbar {
+            background-color: var(--secondary);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            color: var(--primary) !important;
+            font-size: 1.5rem;
+        }
+
+        .nav-link {
+            color: white !important;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-link:hover {
+            color: var(--primary) !important;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .btn-primary:hover {
+            background-color: #2980b9;
+            border-color: #2980b9;
+        }
+
+        .result-card {
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            margin-top: 2rem;
+            overflow: hidden;
+        }
+
+        .verdict-accepted {
+            background-color: #d4edda;
+            color: #155724;
+            border-left: 6px solid var(--success);
+            padding: 1.5rem;
+            border-radius: 0;
+        }
+
+        .verdict-wrong {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-left: 6px solid var(--accent);
+            padding: 1.5rem;
+            border-radius: 0;
+        }
+
+        .verdict-pending {
+            background-color: #fff3cd;
+            color: #856404;
+            border-left: 6px solid var(--warning);
+            padding: 1.5rem;
+            border-radius: 0;
+        }
+
+        .verdict-icon {
+            font-size: 2.5rem;
+            margin-right: 1rem;
+        }
+
+        .stat-badge {
+            font-size: 1.1rem;
+            padding: 0.5rem 1rem;
+            border-radius: 30px;
+            background: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .test-case-list {
+            max-height: 400px;
+            overflow-y: auto;
+            background: #fff;
+            border-radius: 8px;
+            padding: 0.5rem;
+        }
+
+        .test-case-item {
+            border-radius: 6px;
+            padding: 0.8rem 1rem;
+            margin-bottom: 0.4rem;
+            background: #f8f9fa;
+            border-left: 3px solid #dee2e6;
+            transition: 0.2s;
+        }
+
+        .test-case-item.passed {
+            border-left-color: var(--success);
+            background-color: #f0fff4;
+        }
+
+        .test-case-item.failed, .test-case-item.timeout, .test-case-item.error {
+            border-left-color: var(--accent);
+            background-color: #fff5f5;
+        }
+
+        .test-case-item .badge-status {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.8rem;
+            border-radius: 20px;
+        }
+
+        .preview-box {
+            background: #2d2d2d;
+            color: #f8f9fa;
+            padding: 0.8rem 1rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            white-space: pre-wrap;
+            word-break: break-word;
+            max-height: 120px;
+            overflow-y: auto;
+            margin: 0.3rem 0;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #6c757d;
+        }
+
+        .footer {
+            background-color: var(--secondary);
+            color: white;
+            padding: 1.5rem 0;
+            margin-top: 3rem;
+        }
+
+        .footer a {
+            color: var(--light);
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Minimal Navigation Bar (consistent with base) -->
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'home' %}">
+                <i class="fas fa-code me-2"></i>CodeSport
+            </a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item"><a class="nav-link" href="{% url 'home' %}">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'problems' %}">Problems</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'contests' %}">Contests</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'leaderboard' %}">Leaderboard</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'about' %}">About</a></li>
+                </ul>
+
+                <ul class="navbar-nav">
+                    {% if user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle me-1"></i> {{ user.username }}
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'profile' %}">Profile</a></li>
+                            <li><a class="dropdown-item" href="{% url 'submissions' %}">Submissions</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'user_problems' %}">My Problems</a></li>
+                            <li><a class="dropdown-item" href="{% url 'logout' %}">Logout</a></li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Login</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Register</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-9">
+
+                <!-- Back button and title -->
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <a href="{% url 'problem_detail' submission.problem.id %}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-arrow-left me-1"></i> Back to Problem
+                    </a>
+                    <span class="text-muted small">
+                        <i class="far fa-clock me-1"></i>{{ submission.submitted_at|date:"M d, Y H:i" }}
+                    </span>
+                </div>
+
+                <h2 class="mb-3"><i class="fas fa-file-alt me-2 text-primary"></i>Submission Result</h2>
+
+                <!-- Verdict Header -->
+                <div class="card result-card border-0">
+                    {% if submission.verdict == 'accepted' %}
+                        <div class="verdict-accepted d-flex align-items-center">
+                            <i class="fas fa-check-circle verdict-icon"></i>
+                            <div>
+                                <h3 class="mb-0 fw-bold">Accepted</h3>
+                                <p class="mb-0">All test cases passed successfully!</p>
+                            </div>
+                        </div>
+                    {% elif submission.verdict == 'wrong_answer' %}
+                        <div class="verdict-wrong d-flex align-items-center">
+                            <i class="fas fa-times-circle verdict-icon"></i>
+                            <div>
+                                <h3 class="mb-0 fw-bold">Wrong Answer</h3>
+                                <p class="mb-0">Some test cases did not pass.</p>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="verdict-pending d-flex align-items-center">
+                            <i class="fas fa-hourglass-half verdict-icon"></i>
+                            <div>
+                                <h3 class="mb-0 fw-bold">{{ submission.verdict|title }}</h3>
+                                <p class="mb-0">Submission status.</p>
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    <div class="p-4 bg-white">
+                        <!-- Stats Row -->
+                        <div class="row text-center mb-4">
+                            <div class="col-md-4 mb-2">
+                                <span class="stat-badge d-block py-2">
+                                    <i class="fas fa-check-circle text-success me-1"></i>
+                                    <strong>{{ submission.test_cases_passed }}</strong> / {{ submission.total_test_cases }} Passed
+                                </span>
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <span class="stat-badge d-block py-2">
+                                    <i class="fas fa-code me-1 text-primary"></i>
+                                    Language: <strong>{{ submission.language|title }}</strong>
+                                </span>
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <span class="stat-badge d-block py-2">
+                                    <i class="fas fa-list-ol me-1 text-warning"></i>
+                                    Problem: <strong>{{ submission.problem.title }}</strong>
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Test Cases Breakdown (if details are available, but we don't have them in context, we show a general message) -->
+                        <div class="mt-4">
+                            <h5 class="mb-3"><i class="fas fa-vial me-2"></i>Test Cases Overview</h5>
+                            {% if submission.verdict == 'accepted' %}
+                                <div class="alert alert-success py-2">
+                                    <i class="fas fa-check me-2"></i>All {{ submission.total_test_cases }} test case(s) passed.
+                                </div>
+                            {% else %}
+                                <div class="alert alert-warning py-2">
+                                    <i class="fas fa-exclamation-triangle me-2"></i> {{ submission.test_cases_passed }} out of {{ submission.total_test_cases }} test cases passed.
+                                    {% if submission.test_cases_passed == 0 %}
+                                        No test cases passed.
+                                    {% else %}
+                                        Some test cases failed.
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+
+                            <!-- We don't have per-test-case details in this template, but we can show a simple progress bar -->
+                            <div class="progress mb-3" style="height: 8px;">
+                                {% if submission.total_test_cases > 0 %}
+                                    {% with pass_percent=submission.test_cases_passed|floatformat:0 %}
+                                    <div class="progress-bar {% if submission.verdict == 'accepted' %}bg-success{% else %}bg-danger{% endif %}"
+                                         role="progressbar"
+                                         style="width: {% widthratio submission.test_cases_passed submission.total_test_cases 100 %}%;"
+                                         aria-valuenow="{% widthratio submission.test_cases_passed submission.total_test_cases 100 %}"
+                                         aria-valuemin="0" aria-valuemax="100">
+                                    </div>
+                                    {% endwith %}
+                                {% endif %}
+                            </div>
+                            <small class="text-muted">
+                                Passed {{ submission.test_cases_passed }} of {{ submission.total_test_cases }} test cases.
+                            </small>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex flex-wrap gap-2 mt-4 pt-3 border-top">
+                            <a href="{% url 'problem_detail' submission.problem.id %}" class="btn btn-outline-primary">
+                                <i class="fas fa-arrow-left me-1"></i> Back to Problem
+                            </a>
+                            <a href="{% url 'submit_solution' submission.problem.id %}" class="btn btn-primary">
+                                <i class="fas fa-redo me-1"></i> Submit Again
+                            </a>
+                            <a href="{% url 'submissions' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-list me-1"></i> All Submissions
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Optional: Show a hint message if wrong answer, that's all we can do without per-test details -->
+                {% if submission.verdict == 'wrong_answer' %}
+                <div class="alert alert-info mt-3 d-flex align-items-start">
+                    <i class="fas fa-lightbulb me-2 mt-1"></i>
+                    <div>
+                        <strong>Hint:</strong> Review your algorithm and edge cases. Check if your output matches expected format exactly (including spaces and newlines).
+                        You can also look at public test cases on the problem page.
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer (simplified) -->
+    <footer class="footer mt-5">
+        <div class="container text-center">
+            <p class="mb-0">&copy; 2025 CodeSport. All rights reserved. |
+                <a href="#" class="me-2">Privacy</a>
+                <a href="#" class="me-2">Terms</a>
+                <a href="{% url 'about' %}">About</a>
+            </p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+</body>
+</html>

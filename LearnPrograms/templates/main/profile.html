@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Profile - CodeSport{% endblock %}</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #3498db;
+            --secondary: #2c3e50;
+            --accent: #e74c3c;
+            --light: #ecf0f1;
+            --dark: #2c3e50;
+            --success: #2ecc71;
+            --warning: #f39c12;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            padding-bottom: 3rem;
+        }
+
+        .mono-font {
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        .navbar {
+            background-color: var(--secondary);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            color: var(--primary) !important;
+            font-size: 1.5rem;
+        }
+
+        .nav-link {
+            color: white !important;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-link:hover {
+            color: var(--primary) !important;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .btn-primary:hover {
+            background-color: #2980b9;
+            border-color: #2980b9;
+        }
+
+        .profile-header {
+            background: linear-gradient(135deg, var(--secondary) 0%, #1a2530 100%);
+            color: white;
+            padding: 3rem 0;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .profile-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="none" stroke="white" stroke-opacity="0.1" stroke-width="2"/></svg>');
+            background-size: 100px 100px;
+        }
+
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary) 0%, #2980b9 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            font-weight: 700;
+            color: white;
+            border: 4px solid white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            position: relative;
+            z-index: 1;
+        }
+
+        .profile-info {
+            position: relative;
+            z-index: 1;
+        }
+
+        .profile-name {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .profile-username {
+            color: rgba(255,255,255,0.8);
+            font-size: 1.1rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            transition: transform 0.3s, box-shadow 0.3s;
+            text-align: center;
+            height: 100%;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #6c757d;
+            font-weight: 500;
+        }
+
+        .recent-submissions {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        .recent-submissions-header {
+            background: var(--secondary);
+            color: white;
+            padding: 1rem 1.5rem;
+            font-weight: 600;
+        }
+
+        .submission-item {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e9ecef;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .submission-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .submission-item:last-child {
+            border-bottom: none;
+        }
+
+        .verdict-badge {
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .verdict-accepted {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .verdict-wrong_answer {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .verdict-time_limit_exceeded {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .verdict-runtime_error {
+            background-color: #e2e3e5;
+            color: #383d41;
+        }
+
+        .verdict-compilation_error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .achievement-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: #f8f9fa;
+            border-radius: 20px;
+            margin: 0.25rem;
+            font-size: 0.9rem;
+        }
+
+        .achievement-icon {
+            font-size: 1.2rem;
+        }
+
+        .footer {
+            background-color: var(--secondary);
+            color: white;
+            padding: 1.5rem 0;
+            margin-top: 3rem;
+        }
+
+        .footer a {
+            color: var(--light);
+            text-decoration: none;
+        }
+
+        .activity-timeline {
+            position: relative;
+            padding-left: 2rem;
+        }
+
+        .activity-timeline::before {
+            content: '';
+            position: absolute;
+            left: 0.5rem;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #dee2e6;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -2rem;
+            top: 0.5rem;
+            width: 1rem;
+            height: 1rem;
+            border-radius: 50%;
+            background: var(--primary);
+            border: 3px solid white;
+            box-shadow: 0 0 0 2px var(--primary);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'home' %}">
+                <i class="fas fa-code me-2"></i>CodeSport
+            </a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item"><a class="nav-link" href="{% url 'home' %}">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'problems' %}">Problems</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'contests' %}">Contests</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'leaderboard' %}">Leaderboard</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'about' %}">About</a></li>
+                </ul>
+
+                <ul class="navbar-nav">
+                    {% if user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle me-1"></i> {{ user.username }}
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'profile' %}">Profile</a></li>
+                            <li><a class="dropdown-item" href="{% url 'submissions' %}">Submissions</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'user_problems' %}">My Problems</a></li>
+                            <li><a class="dropdown-item" href="{% url 'logout' %}">Logout</a></li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Login</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Register</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Profile Header -->
+    <div class="profile-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-3 text-center mb-3 mb-md-0">
+                    <div class="profile-avatar">
+                        {{ profile_user.username|first|upper }}
+                    </div>
+                </div>
+                <div class="col-md-9 profile-info">
+                    <h1 class="profile-name">{{ profile_user.get_full_name|default:profile_user.username }}</h1>
+                    <p class="profile-username mb-2">
+                        <i class="fas fa-at me-1"></i>{{ profile_user.username }}
+                    </p>
+                    <p class="mb-2">
+                        <i class="fas fa-calendar me-2"></i>Joined {{ profile_user.date_joined|date:"F Y" }}
+                    </p>
+                    <p class="mb-0">
+                        <i class="fas fa-envelope me-2"></i>{{ profile_user.email|default:"No email provided" }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Statistics Cards -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-3 col-sm-6">
+                <div class="stat-card">
+                    <div class="stat-number">{{ total_submissions }}</div>
+                    <div class="stat-label">Total Submissions</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="stat-card">
+                    <div class="stat-number text-success">{{ accepted_submissions }}</div>
+                    <div class="stat-label">Accepted</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="stat-card">
+                    <div class="stat-number text-primary">{{ problems_solved }}</div>
+                    <div class="stat-label">Problems Solved</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="stat-card">
+                    <div class="stat-number text-warning">{{ acceptance_rate }}%</div>
+                    <div class="stat-label">Acceptance Rate</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Achievements -->
+        {% if achievements %}
+        <div class="card mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-trophy me-2 text-warning"></i>Achievements</h5>
+            </div>
+            <div class="card-body">
+                {% for achievement in achievements %}
+                <span class="achievement-badge">
+                    <span class="achievement-icon">{{ achievement.icon }}</span>
+                    {{ achievement.name }}
+                </span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Recent Submissions -->
+        <div class="recent-submissions">
+            <div class="recent-submissions-header">
+                <i class="fas fa-history me-2"></i>Recent Submissions
+            </div>
+            {% if recent_submissions %}
+                {% for submission in recent_submissions %}
+                <div class="submission-item">
+                    <div>
+                        <a href="{% url 'problem_detail' submission.problem.id %}" class="text-decoration-none">
+                            <strong>{{ submission.problem.title }}</strong>
+                        </a>
+                        <div class="text-muted small">
+                            <i class="far fa-clock me-1"></i>{{ submission.submitted_at|date:"M d, Y H:i" }}
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="verdict-badge verdict-{{ submission.verdict }}">
+                            {% if submission.verdict == 'accepted' %}
+                                <i class="fas fa-check me-1"></i>Accepted
+                            {% elif submission.verdict == 'wrong_answer' %}
+                                <i class="fas fa-times me-1"></i>Wrong Answer
+                            {% else %}
+                                {{ submission.verdict|title }}
+                            {% endif %}
+                        </span>
+                        <a href="{% url 'submission_result' submission.id %}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="fas fa-inbox mb-2" style="font-size: 2rem;"></i>
+                    <p class="mb-0">No submissions yet</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Problems Created -->
+        {% if created_problems %}
+        <div class="card mt-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-file-code me-2 text-primary"></i>Problems Created</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    {% for problem in created_problems %}
+                    <a href="{% url 'problem_detail' problem.id %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{ problem.title }}</strong>
+                            <div class="text-muted small">Created {{ problem.created_at|date:"M d, Y" }}</div>
+                        </div>
+                        <span class="badge bg-{{ problem.difficulty }}">
+                            {{ problem.difficulty|title }}
+                        </span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer mt-5">
+        <div class="container text-center">
+            <p class="mb-0">&copy; 2025 CodeSport. All rights reserved. |
+                <a href="#" class="me-2">Privacy</a>
+                <a href="#" class="me-2">Terms</a>
+                <a href="{% url 'about' %}">About</a>
+            </p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+</body>
+</html>

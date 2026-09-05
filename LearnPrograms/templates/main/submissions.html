@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Submissions - CodeSport{% endblock %}</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #3498db;
+            --secondary: #2c3e50;
+            --accent: #e74c3c;
+            --light: #ecf0f1;
+            --dark: #2c3e50;
+            --success: #2ecc71;
+            --warning: #f39c12;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            padding-bottom: 3rem;
+        }
+
+        .mono-font {
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        .navbar {
+            background-color: var(--secondary);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            color: var(--primary) !important;
+            font-size: 1.5rem;
+        }
+
+        .nav-link {
+            color: white !important;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-link:hover {
+            color: var(--primary) !important;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .btn-primary:hover {
+            background-color: #2980b9;
+            border-color: #2980b9;
+        }
+
+        .submissions-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            overflow: hidden;
+            margin-top: 2rem;
+        }
+
+        .submissions-header {
+            background: linear-gradient(135deg, var(--secondary) 0%, #1a2530 100%);
+            color: white;
+            padding: 1.5rem;
+            border-bottom: 3px solid var(--primary);
+        }
+
+        .submissions-header h2 {
+            margin: 0;
+            font-weight: 700;
+        }
+
+        .filter-section {
+            background-color: #f8f9fa;
+            padding: 1.5rem;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .filter-section .form-control,
+        .filter-section .form-select {
+            border-radius: 8px;
+            border: 1px solid #ced4da;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .filter-section .form-control:focus,
+        .filter-section .form-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+
+        .table {
+            margin-bottom: 0;
+        }
+
+        .table thead th {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+            padding: 1rem;
+        }
+
+        .table tbody td {
+            padding: 1rem;
+            vertical-align: middle;
+        }
+
+        .table tbody tr {
+            transition: background-color 0.2s;
+        }
+
+        .table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .verdict-badge {
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .verdict-accepted {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .verdict-wrong_answer {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .verdict-time_limit_exceeded {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .verdict-runtime_error {
+            background-color: #e2e3e5;
+            color: #383d41;
+            border: 1px solid #d6d8db;
+        }
+
+        .verdict-compilation_error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .problem-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .problem-link:hover {
+            color: #2980b9;
+            text-decoration: underline;
+        }
+
+        .stats-cards {
+            margin-top: 1.5rem;
+            padding: 0 1.5rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: transform 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .stat-card .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stat-card .stat-label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            color: #6c757d;
+            letter-spacing: 0.5px;
+        }
+
+        .empty-state {
+            padding: 3rem;
+            text-align: center;
+            color: #6c757d;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .footer {
+            background-color: var(--secondary);
+            color: white;
+            padding: 1.5rem 0;
+            margin-top: 3rem;
+        }
+
+        .footer a {
+            color: var(--light);
+            text-decoration: none;
+        }
+
+        .language-badge {
+            background-color: #e9ecef;
+            color: #495057;
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .user-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .user-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: var(--primary);
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .pagination-container {
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .filter-badge {
+            display: inline-block;
+            padding: 0.3rem 0.6rem;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-right: 0.5rem;
+        }
+
+        .clear-filter {
+            color: var(--accent);
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .clear-filter:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'home' %}">
+                <i class="fas fa-code me-2"></i>CodeSport
+            </a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item"><a class="nav-link" href="{% url 'home' %}">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'problems' %}">Problems</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'contests' %}">Contests</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'leaderboard' %}">Leaderboard</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'about' %}">About</a></li>
+                </ul>
+
+                <ul class="navbar-nav">
+                    {% if user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle me-1"></i> {{ user.username }}
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'profile' %}">Profile</a></li>
+                            <li><a class="dropdown-item" href="{% url 'submissions' %}">Submissions</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'user_problems' %}">My Problems</a></li>
+                            <li><a class="dropdown-item" href="{% url 'logout' %}">Logout</a></li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Login</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Register</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="submissions-container">
+            <div class="submissions-header">
+                <h2><i class="fas fa-history me-2"></i>All Submissions</h2>
+                <p class="mb-0 text-light opacity-75">View and filter submissions from all users</p>
+            </div>
+
+            <!-- Filter Section -->
+            <div class="filter-section">
+                <form method="GET" action="{% url 'submissions' %}" class="row g-3">
+                    <div class="col-md-3">
+                        <label for="problemSearch" class="form-label small fw-bold">Problem Search</label>
+                        <input type="text" class="form-control" id="problemSearch" name="search"
+                               placeholder="Search by title..." value="{{ request.GET.search }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="problemId" class="form-label small fw-bold">Problem ID</label>
+                        <input type="number" class="form-control" id="problemId" name="problem_id"
+                               placeholder="e.g., 1" value="{{ request.GET.problem_id }}" min="1">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="userSearch" class="form-label small fw-bold">User</label>
+                        <input type="text" class="form-control" id="userSearch" name="user"
+                               placeholder="Username..." value="{{ request.GET.user }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="verdictFilter" class="form-label small fw-bold">Verdict</label>
+                        <select class="form-select" id="verdictFilter" name="verdict">
+                            <option value="">All Verdicts</option>
+                            <option value="accepted" {% if request.GET.verdict == 'accepted' %}selected{% endif %}>Accepted</option>
+                            <option value="wrong_answer" {% if request.GET.verdict == 'wrong_answer' %}selected{% endif %}>Wrong Answer</option>
+                            <option value="time_limit_exceeded" {% if request.GET.verdict == 'time_limit_exceeded' %}selected{% endif %}>Time Limit Exceeded</option>
+                            <option value="runtime_error" {% if request.GET.verdict == 'runtime_error' %}selected{% endif %}>Runtime Error</option>
+                            <option value="compilation_error" {% if request.GET.verdict == 'compilation_error' %}selected{% endif %}>Compilation Error</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="languageFilter" class="form-label small fw-bold">Language</label>
+                        <select class="form-select" id="languageFilter" name="language">
+                            <option value="">All Languages</option>
+                            <option value="python" {% if request.GET.language == 'python' %}selected{% endif %}>Python</option>
+                            <option value="cpp" {% if request.GET.language == 'cpp' %}selected{% endif %}>C++</option>
+                            <option value="java" {% if request.GET.language == 'java' %}selected{% endif %}>Java</option>
+                            <option value="javascript" {% if request.GET.language == 'javascript' %}selected{% endif %}>JavaScript</option>
+                        </select>
+                    </div>
+                    <div class="col-md-1 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-filter me-1"></i>Filter
+                        </button>
+                    </div>
+                </form>
+
+                {% if request.GET.search or request.GET.problem_id or request.GET.user or request.GET.verdict or request.GET.language %}
+                <div class="mt-3">
+                    <span class="text-muted small me-2">Active filters:</span>
+                    {% if request.GET.search %}
+                    <span class="filter-badge">Search: "{{ request.GET.search }}" <a href="?{% for key, value in request.GET.items %}{% if key != 'search' %}{{ key }}={{ value }}&{% endif %}{% endfor %}" class="clear-filter ms-1"><i class="fas fa-times"></i></a></span>
+                    {% endif %}
+                    {% if request.GET.problem_id %}
+                    <span class="filter-badge">Problem ID: {{ request.GET.problem_id }} <a href="?{% for key, value in request.GET.items %}{% if key != 'problem_id' %}{{ key }}={{ value }}&{% endif %}{% endfor %}" class="clear-filter ms-1"><i class="fas fa-times"></i></a></span>
+                    {% endif %}
+                    {% if request.GET.user %}
+                    <span class="filter-badge">User: "{{ request.GET.user }}" <a href="?{% for key, value in request.GET.items %}{% if key != 'user' %}{{ key }}={{ value }}&{% endif %}{% endfor %}" class="clear-filter ms-1"><i class="fas fa-times"></i></a></span>
+                    {% endif %}
+                    {% if request.GET.verdict %}
+                    <span class="filter-badge">Verdict: {{ request.GET.verdict }} <a href="?{% for key, value in request.GET.items %}{% if key != 'verdict' %}{{ key }}={{ value }}&{% endif %}{% endfor %}" class="clear-filter ms-1"><i class="fas fa-times"></i></a></span>
+                    {% endif %}
+                    {% if request.GET.language %}
+                    <span class="filter-badge">Language: {{ request.GET.language }} <a href="?{% for key, value in request.GET.items %}{% if key != 'language' %}{{ key }}={{ value }}&{% endif %}{% endfor %}" class="clear-filter ms-1"><i class="fas fa-times"></i></a></span>
+                    {% endif %}
+                    <a href="{% url 'submissions' %}" class="btn btn-sm btn-outline-secondary ms-2">
+                        <i class="fas fa-times me-1"></i>Clear All
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="stats-cards">
+                <div class="row g-3">
+                    <div class="col-md-3 col-sm-6">
+                        <div class="stat-card">
+                            <div class="stat-number">{{ submissions|length }}</div>
+                            <div class="stat-label">Total Submissions</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <div class="stat-card">
+                            <div class="stat-number text-success">
+                                {% with accepted_count=0 %}
+                                {% for submission in submissions %}
+                                    {% if submission.verdict == 'accepted' %}
+                                        {% with accepted_count=accepted_count|add:1 %}{% endwith %}
+                                    {% endif %}
+                                {% endfor %}
+                                {% endwith %}
+                            </div>
+                            <div class="stat-label">Accepted</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <div class="stat-card">
+                            <div class="stat-number text-danger">
+                                {% with wrong_count=0 %}
+                                {% for submission in submissions %}
+                                    {% if submission.verdict == 'wrong_answer' %}
+                                        {% with wrong_count=wrong_count|add:1 %}{% endwith %}
+                                    {% endif %}
+                                {% endfor %}
+                                {% endwith %}
+                            </div>
+                            <div class="stat-label">Wrong Answers</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <div class="stat-card">
+                            <div class="stat-number text-warning">
+                                {% with other_count=0 %}
+                                {% for submission in submissions %}
+                                    {% if submission.verdict != 'accepted' and submission.verdict != 'wrong_answer' %}
+                                        {% with other_count=other_count|add:1 %}{% endwith %}
+                                    {% endif %}
+                                {% endfor %}
+                                {% endwith %}
+                            </div>
+                            <div class="stat-label">Other</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submissions Table -->
+            <div class="table-responsive mt-4">
+                {% if submissions %}
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Problem</th>
+                            <th>User</th>
+                            <th>Language</th>
+                            <th>Verdict</th>
+                            <th>Test Cases</th>
+                            <th>Submitted At</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for submission in submissions %}
+                        <tr>
+                            <td class="text-muted">#{{ submission.id }}</td>
+                            <td>
+                                <a href="{% url 'problem_detail' submission.problem.id %}" class="problem-link">
+                                    <i class="fas fa-file-code me-1"></i>{{ submission.problem.title }}
+                                </a>
+                                <small class="text-muted d-block">ID: {{ submission.problem.id }}</small>
+                            </td>
+                            <td>
+                                <div class="user-badge">
+                                    <div class="user-avatar">
+                                        {{ submission.user.username|first|upper }}
+                                    </div>
+                                    <span>{{ submission.user.username }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="language-badge">
+                                    <i class="fas fa-code me-1"></i>{{ submission.language|title }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="verdict-badge verdict-{{ submission.verdict }}">
+                                    {% if submission.verdict == 'accepted' %}
+                                        <i class="fas fa-check-circle me-1"></i>Accepted
+                                    {% elif submission.verdict == 'wrong_answer' %}
+                                        <i class="fas fa-times-circle me-1"></i>Wrong Answer
+                                    {% elif submission.verdict == 'time_limit_exceeded' %}
+                                        <i class="fas fa-clock me-1"></i>Time Limit
+                                    {% elif submission.verdict == 'runtime_error' %}
+                                        <i class="fas fa-exclamation-triangle me-1"></i>Runtime Error
+                                    {% elif submission.verdict == 'compilation_error' %}
+                                        <i class="fas fa-times-circle me-1"></i>Compilation Error
+                                    {% else %}
+                                        <i class="fas fa-hourglass-half me-1"></i>{{ submission.verdict|title }}
+                                    {% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark">
+                                    {{ submission.test_cases_passed }}/{{ submission.total_test_cases }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="text-muted small">
+                                    <i class="far fa-clock me-1"></i>{{ submission.submitted_at|date:"M d, Y H:i" }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{% url 'submission_result' submission.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye me-1"></i>View
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-inbox"></i>
+                    <h4>No Submissions Found</h4>
+                    <p class="mb-4">No submissions match your filter criteria.</p>
+                    <a href="{% url 'submissions' %}" class="btn btn-primary">
+                        <i class="fas fa-times me-1"></i>Clear Filters
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Pagination -->
+            {% if submissions %}
+            <div class="pagination-container d-flex justify-content-between align-items-center">
+                <span class="text-muted small">
+                    Showing {{ submissions|length }} submission{{ submissions|length|pluralize }}
+                </span>
+                <span class="text-muted small">
+                    <i class="fas fa-info-circle me-1"></i>Click "View" to see detailed results
+                </span>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'problems' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-arrow-left me-1"></i> Back to Problems
+                    </a>
+                    <a href="{% url 'home' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-home me-1"></i> Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer mt-5">
+        <div class="container text-center">
+            <p class="mb-0">&copy; 2025 CodeSport. All rights reserved. |
+                <a href="#" class="me-2">Privacy</a>
+                <a href="#" class="me-2">Terms</a>
+                <a href="{% url 'about' %}">About</a>
+            </p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+</body>
+</html>

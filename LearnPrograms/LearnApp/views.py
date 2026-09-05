@@ -282,12 +282,108 @@ def leaderboard(request):
 def about(request):
     return HttpResponse('<h2>WillBeRedacted</h2>')
 
-def profile(request):
-    return HttpResponse('<h2>WillBeRedacted</h2>')
 
+@login_required
+def profile(request, username=None):
+    # If no username is provided, show the current user's profile
+    if username:
+        profile_user = get_object_or_404(User, username=username)
+    else:
+        profile_user = request.user
+
+    # Get user's submissions
+    user_submissions = Submission.objects.filter(user=profile_user).order_by('-submitted_at')
+
+    # Calculate statistics
+    total_submissions = user_submissions.count()
+    accepted_submissions = user_submissions.filter(verdict='accepted').count()
+
+    # Get unique problems solved
+    problems_solved = user_submissions.filter(verdict='accepted').values('problem').distinct().count()
+
+    # Calculate acceptance rate
+    acceptance_rate = 0
+    if total_submissions > 0:
+        acceptance_rate = round((accepted_submissions / total_submissions) * 100, 1)
+
+    # Get recent submissions (last 10)
+    recent_submissions = user_submissions[:10]
+
+    # Get problems created by this user
+    created_problems = Problem.objects.filter(author=profile_user).order_by('-created_at')[:5]
+
+    # Define achievements based on stats
+    achievements = []
+    if accepted_submissions >= 1:
+        achievements.append({'icon': '✅', 'name': 'First Accepted'})
+    if accepted_submissions >= 10:
+        achievements.append({'icon': '🏆', 'name': '10 Accepted'})
+    if accepted_submissions >= 50:
+        achievements.append({'icon': '👑', 'name': '50 Accepted'})
+    if problems_solved >= 5:
+        achievements.append({'icon': '🎯', 'name': '5 Problems Solved'})
+    if problems_solved >= 20:
+        achievements.append({'icon': '🚀', 'name': '20 Problems Solved'})
+    if total_submissions >= 100:
+        achievements.append({'icon': '💪', 'name': '100 Submissions'})
+
+    context = {
+        'profile_user': profile_user,
+        'total_submissions': total_submissions,
+        'accepted_submissions': accepted_submissions,
+        'problems_solved': problems_solved,
+        'acceptance_rate': acceptance_rate,
+        'recent_submissions': recent_submissions,
+        'created_problems': created_problems,
+        'achievements': achievements,
+    }
+
+    return render(request, 'main/profile.html', context)
+
+
+@login_required
 def submissions(request):
-    submissions_list = Submission.objects.filter(user=request.user).order_by('-submitted_at')
-    return render(request, 'main/submissions.html', {'submissions': submissions_list})
+    # Get all submissions
+    submissions_list = Submission.objects.all().order_by('-submitted_at')
+
+    # Check if user wants to see all submissions or just their own
+    show_all = request.GET.get('show_all', 'false').lower() == 'true'
+
+    # By default, show only the current user's submissions
+    if not show_all and not request.user.is_staff:
+        submissions_list = submissions_list.filter(user=request.user)
+
+    # Get filter parameters from GET request
+    search_query = request.GET.get('search', '')
+    problem_id = request.GET.get('problem_id', '')
+    username = request.GET.get('user', '')
+    verdict = request.GET.get('verdict', '')
+    language = request.GET.get('language', '')
+
+    # Apply filters
+    if search_query:
+        submissions_list = submissions_list.filter(problem__title__icontains=search_query)
+
+    if problem_id:
+        try:
+            problem_id_int = int(problem_id)
+            submissions_list = submissions_list.filter(problem__id=problem_id_int)
+        except ValueError:
+            pass
+
+    if username:
+        submissions_list = submissions_list.filter(user__username__icontains=username)
+
+    if verdict:
+        submissions_list = submissions_list.filter(verdict=verdict)
+
+    if language:
+        submissions_list = submissions_list.filter(language=language)
+
+    return render(request, 'main/submissions.html', {
+        'submissions': submissions_list,
+        'show_all': show_all
+    })
 
 @login_required
 def logout(request):
