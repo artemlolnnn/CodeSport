@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login & Sign Up</title>
+    <title>Login & Sign Up - Email Verification</title>
     <style>
         * {
             margin: 0;
@@ -11,7 +11,7 @@
             box-sizing: border-box;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        
+
         body {
             display: flex;
             justify-content: center;
@@ -20,45 +20,52 @@
             background: linear-gradient(120deg, #6a11cb, #2575fc);
             padding: 20px;
         }
-        
+
         .container {
             background-color: white;
             border-radius: 10px;
             box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
-            width: 400px;
+            width: 450px;
             max-width: 100%;
             overflow: hidden;
             position: relative;
         }
-        
+
         .form-container {
             display: flex;
-            width: 200%;
+            width: 400%;
             transition: transform 0.6s ease-in-out;
         }
-        
-        .login-container, .signup-container {
+
+        .login-container, .signup-container, .verify-signup-container, .verify-login-container {
             padding: 30px;
-            width: 50%;
+            width: 25%;
         }
-        
+
         h2 {
             text-align: center;
             margin-bottom: 20px;
             color: #333;
         }
-        
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
         .form-control {
             margin-bottom: 15px;
             position: relative;
         }
-        
+
         .form-control label {
             display: block;
             margin-bottom: 5px;
             color: #555;
         }
-        
+
         .form-control input {
             width: 100%;
             padding: 12px;
@@ -66,12 +73,12 @@
             border-radius: 5px;
             font-size: 14px;
         }
-        
+
         .form-control input:focus {
             outline: none;
             border-color: #6a11cb;
         }
-        
+
         button {
             width: 100%;
             padding: 12px;
@@ -83,44 +90,85 @@
             cursor: pointer;
             transition: opacity 0.3s;
         }
-        
+
         button:hover {
             opacity: 0.9;
         }
-        
-        .toggle-container {
-            text-align: center;
-            margin-top: 20px;
-        }
-        
-        .toggle-container p {
-            color: #555;
-            font-size: 14px;
-        }
-        
-        .toggle {
-            color: #6a11cb;
-            cursor: pointer;
-            text-decoration: underline;
-        }
-        
+
         .message {
             padding: 10px;
             margin: 10px 0;
             border-radius: 5px;
             text-align: center;
         }
-        
+
         .success {
             background-color: #d4edda;
             color: #155724;
         }
-        
+
         .error {
             background-color: #f8d7da;
             color: #721c24;
         }
-        
+
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .verification-code-input {
+            letter-spacing: 10px;
+            font-size: 20px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .toggle-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .toggle-container p {
+            color: #555;
+            font-size: 14px;
+        }
+
+        .toggle {
+            color: #6a11cb;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        .resend-button {
+            background: none;
+            border: none;
+            color: #6a11cb;
+            text-decoration: underline;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .resend-button:hover {
+            color: #2575fc;
+        }
+
+        .timer {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .back-link {
+            color: #6a11cb;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
         @media (max-width: 500px) {
             .container {
                 width: 100%;
@@ -130,10 +178,12 @@
 </head>
 <body>
     <div class="container">
-        <div class="form-container">
+        <div class="form-container" id="formContainer">
+            <!-- Login Section -->
             <div class="login-container">
                 <h2>Login to Your Account</h2>
-                
+                <p class="subtitle">Enter your credentials to continue</p>
+
                 {% if messages %}
                     {% for message in messages %}
                         <div class="message {% if message.tags %}{{ message.tags }}{% endif %}">
@@ -141,13 +191,13 @@
                         </div>
                     {% endfor %}
                 {% endif %}
-                
-                <form method="POST" action="">
+
+                <form method="POST" action="{% url 'login' %}" id="loginForm">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="login">
                     <div class="form-control">
-                        <label for="login-username">Username</label>
-                        <input type="text" id="login-username" name="username" placeholder="Enter your username" required>
+                        <label for="login-username">Username or Email</label>
+                        <input type="text" id="login-username" name="username" placeholder="Enter username or email" required>
                     </div>
                     <div class="form-control">
                         <label for="login-password">Password</label>
@@ -156,13 +206,15 @@
                     <button type="submit">Login</button>
                 </form>
                 <div class="toggle-container">
-                    <p>Don't have an account? <span class="toggle" onclick="toggleForm()">Sign Up</span></p>
+                    <p>Don't have an account? <span class="toggle" onclick="showSignup()">Sign Up</span></p>
                 </div>
             </div>
-            
+
+            <!-- Sign Up Section -->
             <div class="signup-container">
                 <h2>Create Your Account</h2>
-                
+                <p class="subtitle">We'll send a verification code to your email</p>
+
                 {% if messages %}
                     {% for message in messages %}
                         <div class="message {% if message.tags %}{{ message.tags }}{% endif %}">
@@ -170,8 +222,8 @@
                         </div>
                     {% endfor %}
                 {% endif %}
-                
-                <form method="POST" action="">
+
+                <form method="POST" action="{% url 'login' %}" id="signupForm">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="signup">
                     <div class="form-control">
@@ -184,38 +236,384 @@
                     </div>
                     <div class="form-control">
                         <label for="signup-password">Password</label>
-                        <input type="password" id="signup-password" name="password" placeholder="Create a password" required>
+                        <input type="password" id="signup-password" name="password" placeholder="Create a password (min 8 characters)" required>
                     </div>
                     <div class="form-control">
                         <label for="signup-confirm">Confirm Password</label>
                         <input type="password" id="signup-confirm" name="confirm_password" placeholder="Confirm your password" required>
                     </div>
-                    <button type="submit">Sign Up</button>
+                    <button type="submit">Send Verification Code</button>
                 </form>
                 <div class="toggle-container">
-                    <p>Already have an account? <span class="toggle" onclick="toggleForm()">Login</span></p>
+                    <p>Already have an account? <span class="toggle" onclick="showLogin()">Login</span></p>
+                </div>
+            </div>
+
+            <!-- Sign Up Email Verification Section -->
+            <div class="verify-signup-container">
+                <h2>Verify Your Email</h2>
+                <p class="subtitle">
+                    We sent a 6-digit code to<br>
+                    <strong id="signupVerificationEmail"></strong>
+                </p>
+
+                <form method="POST" action="{% url 'login' %}" id="signupVerificationForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="verify_signup">
+                    <input type="hidden" name="email" id="signupVerifyEmail" value="">
+                    <input type="hidden" name="username" id="signupVerifyUsername" value="">
+                    <input type="hidden" name="password" id="signupVerifyPassword" value="">
+                    <div class="form-control">
+                        <label for="signup-verification-code">Verification Code</label>
+                        <input type="text"
+                               id="signup-verification-code"
+                               name="verification_code"
+                               class="verification-code-input"
+                               placeholder="••••••"
+                               maxlength="6"
+                               pattern="[0-9]{6}"
+                               required>
+                    </div>
+                    <button type="submit">Verify & Create Account</button>
+                </form>
+
+                <div class="timer" id="signupTimer"></div>
+
+                <button class="resend-button" id="signupResendButton" onclick="resendSignupCode()" disabled>
+                    Resend Code
+                </button>
+
+                <div class="toggle-container">
+                    <p><span class="back-link" onclick="showSignup()">← Back to Sign Up</span></p>
+                </div>
+            </div>
+
+            <!-- Login Email Verification Section -->
+            <div class="verify-login-container">
+                <h2>Verify Login</h2>
+                <p class="subtitle">
+                    We sent a 6-digit code to<br>
+                    <strong id="loginVerificationEmail"></strong>
+                </p>
+
+                <form method="POST" action="{% url 'login' %}" id="loginVerificationForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="verify_login">
+                    <input type="hidden" name="username" id="loginVerifyUsername" value="">
+                    <input type="hidden" name="password" id="loginVerifyPassword" value="">
+                    <div class="form-control">
+                        <label for="login-verification-code">Verification Code</label>
+                        <input type="text"
+                               id="login-verification-code"
+                               name="verification_code"
+                               class="verification-code-input"
+                               placeholder="••••••"
+                               maxlength="6"
+                               pattern="[0-9]{6}"
+                               required>
+                    </div>
+                    <button type="submit">Verify & Login</button>
+                </form>
+
+                <div class="timer" id="loginTimer"></div>
+
+                <button class="resend-button" id="loginResendButton" onclick="resendLoginCode()" disabled>
+                    Resend Code
+                </button>
+
+                <div class="toggle-container">
+                    <p><span class="back-link" onclick="showLogin()">← Back to Login</span></p>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        function toggleForm() {
-            const formContainer = document.querySelector('.form-container');
-            formContainer.style.transform = formContainer.style.transform === 'translateX(-50%)' 
-                ? 'translateX(0)' 
-                : 'translateX(-50%)';
+    let currentPosition = 0;
+    let signupTimerInterval;
+    let loginTimerInterval;
+    let signupTimerSeconds = 60;
+    let loginTimerSeconds = 60;
+
+    function updateFormPosition() {
+        const formContainer = document.getElementById('formContainer');
+        formContainer.style.transform = `translateX(-${currentPosition * 25}%)`;
+    }
+
+    function showLogin() {
+        currentPosition = 0;
+        updateFormPosition();
+    }
+
+    function showSignup() {
+        currentPosition = 1;
+        updateFormPosition();
+    }
+
+    function showSignupVerification(email, username, password) {
+        currentPosition = 2;
+        updateFormPosition();
+        document.getElementById('signupVerificationEmail').textContent = email;
+        document.getElementById('signupVerifyEmail').value = email;
+        document.getElementById('signupVerifyUsername').value = username;
+        document.getElementById('signupVerifyPassword').value = password;
+        startSignupTimer();
+    }
+
+    function showLoginVerification(username, password, email) {
+        currentPosition = 3;
+        updateFormPosition();
+        document.getElementById('loginVerificationEmail').textContent = email;
+        document.getElementById('loginVerifyUsername').value = username;
+        document.getElementById('loginVerifyPassword').value = password;
+        startLoginTimer();
+    }
+
+    function startSignupTimer() {
+        signupTimerSeconds = 60;
+        updateSignupTimerDisplay();
+        document.getElementById('signupResendButton').disabled = true;
+
+        clearInterval(signupTimerInterval);
+        signupTimerInterval = setInterval(() => {
+            signupTimerSeconds--;
+            updateSignupTimerDisplay();
+
+            if (signupTimerSeconds <= 0) {
+                clearInterval(signupTimerInterval);
+                document.getElementById('signupResendButton').disabled = false;
+                document.getElementById('signupTimer').textContent = '';
+            }
+        }, 1000);
+    }
+
+    function updateSignupTimerDisplay() {
+        if (signupTimerSeconds > 0) {
+            document.getElementById('signupTimer').textContent =
+                `Resend code in ${signupTimerSeconds} seconds`;
         }
-        
-        window.onload = function() {
-            {% if messages %}
-                {% for message in messages %}
-                    {% if 'signup' in message.tags %}
-                        toggleForm();
-                    {% endif %}
-                {% endfor %}
-            {% endif %}
-        };
+    }
+
+    function startLoginTimer() {
+        loginTimerSeconds = 60;
+        updateLoginTimerDisplay();
+        document.getElementById('loginResendButton').disabled = true;
+
+        clearInterval(loginTimerInterval);
+        loginTimerInterval = setInterval(() => {
+            loginTimerSeconds--;
+            updateLoginTimerDisplay();
+
+            if (loginTimerSeconds <= 0) {
+                clearInterval(loginTimerInterval);
+                document.getElementById('loginResendButton').disabled = false;
+                document.getElementById('loginTimer').textContent = '';
+            }
+        }, 1000);
+    }
+
+    function updateLoginTimerDisplay() {
+        if (loginTimerSeconds > 0) {
+            document.getElementById('loginTimer').textContent =
+                `Resend code in ${loginTimerSeconds} seconds`;
+        }
+    }
+
+    function resendSignupCode() {
+        const email = document.getElementById('signupVerifyEmail').value;
+
+        fetch('{% url "login" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: `action=resend_signup_code&email=${encodeURIComponent(email)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                startSignupTimer();
+                alert('New verification code sent to your email');
+            } else {
+                alert(data.message || 'Failed to resend code');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        });
+    }
+
+    function resendLoginCode() {
+        const username = document.getElementById('loginVerifyUsername').value;
+
+        fetch('{% url "login" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: `action=resend_login_code&username=${encodeURIComponent(username)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                startLoginTimer();
+                alert('New verification code sent to your email');
+            } else {
+                alert(data.message || 'Failed to resend code');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        });
+    }
+
+    // Auto-focus and format verification code inputs
+    document.addEventListener('DOMContentLoaded', function() {
+        const codeInputs = document.querySelectorAll('.verification-code-input');
+        codeInputs.forEach(input => {
+            input.addEventListener('input', function(e) {
+                this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6);
+            });
+        });
+
+        // Handle signup form with AJAX
+        document.getElementById('signupForm')?.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const password = document.getElementById('signup-password').value;
+            const confirmPassword = document.getElementById('signup-confirm').value;
+
+            if (password !== confirmPassword) {
+                alert('Passwords do not match!');
+                return;
+            }
+
+            if (password.length < 8) {
+                alert('Password must be at least 8 characters long!');
+                return;
+            }
+
+            const formData = new FormData(this);
+
+            fetch('{% url "login" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSignupVerification(
+                        data.email,
+                        data.username,
+                        data.password
+                    );
+                } else {
+                    alert(data.message || 'Failed to send verification code');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            });
+        });
+
+        // Handle login form with AJAX
+        document.getElementById('loginForm')?.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+
+            fetch('{% url "login" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.requires_verification) {
+                    showLoginVerification(
+                        data.username,
+                        data.password,
+                        data.email
+                    );
+                } else if (data.success) {
+                    // Handle successful login (should not happen without verification)
+                    window.location.href = data.redirect_url || '/home/';
+                } else {
+                    alert(data.message || 'Login failed');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            });
+        });
+
+        // Handle signup verification form with AJAX
+        document.getElementById('signupVerificationForm')?.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+
+            fetch('{% url "login" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Redirect to home page
+                    window.location.href = data.redirect_url || '/home/';
+                } else {
+                    alert(data.message || 'Verification failed');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            });
+        });
+
+        // Handle login verification form with AJAX
+        document.getElementById('loginVerificationForm')?.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+
+            fetch('{% url "login" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Redirect to home page
+                    window.location.href = data.redirect_url || '/home/';
+                } else {
+                    alert(data.message || 'Verification failed');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            });
+        });
+    });
     </script>
 </body>
 </html>

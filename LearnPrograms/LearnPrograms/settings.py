@@ -100,6 +100,21 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# Email settings for verification
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'  # Or your email provider
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'codesportsupport@gmail.com'
+EMAIL_HOST_PASSWORD = 'szfe ungo fejx wuzi'
+DEFAULT_FROM_EMAIL = 'CodeSport <codesportsupport@gmail.com>'
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # Store sessions in database
+SESSION_COOKIE_AGE = 3600  # 1 hour in seconds
+SESSION_SAVE_EVERY_REQUEST = True  # Save session on every request
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Keep session after browser closes
+
+# For development, you can use console backend
+# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/

@@ -2,48 +2,307 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.contrib.auth.models import User
 from django.contrib import messages
-from django.http import *
+from django.http import HttpResponse, JsonResponse, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
+from django.core.mail import send_mail
+from django.conf import settings
 from .models import *
 from .forms import *
 import subprocess
 import tempfile
 import os
+import random
+import json
+from datetime import datetime, timedelta
+
 
 def login_view(request):
     if request.user.is_authenticated:
         return redirect('home')
-    
+
     if request.method == "POST":
         action = request.POST.get('action')
-        
+
         if action == 'login':
             username = request.POST.get('username')
             password = request.POST.get('password')
+
+            # Check if user entered email
+            if '@' in username:
+                try:
+                    user_obj = User.objects.get(email=username)
+                    username = user_obj.username
+                except User.DoesNotExist:
+                    return JsonResponse({
+                        'success': False,
+                        'message': 'No account found with this email.'
+                    })
+
             user = authenticate(request, username=username, password=password)
-            
+
             if user is not None:
-                auth_login(request, user)
-                return redirect('home')
+                # Generate verification code for login
+                verification_code = str(random.randint(100000, 999999))
+
+                # Store in session
+                request.session['login_verification_code'] = verification_code
+                request.session['login_username'] = username
+                request.session['login_password'] = password
+                request.session['login_verification_time'] = datetime.now().isoformat()
+                request.session.modified = True
+
+                # Send verification email
+                try:
+                    send_mail(
+                        'Verify Your Login - CodeSport',
+                        f'Your login verification code is: {verification_code}\n\n'
+                        f'This code will expire in 10 minutes.\n\n'
+                        f'If you did not attempt to login, please ignore this email.',
+                        settings.DEFAULT_FROM_EMAIL,
+                        [user.email],
+                        fail_silently=False,
+                    )
+
+                    return JsonResponse({
+                        'requires_verification': True,
+                        'username': username,
+                        'password': password,
+                        'email': user.email
+                    })
+
+                except Exception as e:
+                    # Clean up session
+                    request.session.pop('login_verification_code', None)
+                    request.session.pop('login_username', None)
+                    request.session.pop('login_password', None)
+                    request.session.pop('login_verification_time', None)
+                    request.session.modified = True
+
+                    return JsonResponse({
+                        'success': False,
+                        'message': f'Failed to send verification email: {str(e)}'
+                    })
             else:
-                messages.error(request, 'Invalid username or password.')
-                
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Invalid username/email or password.'
+                })
+
         elif action == 'signup':
             username = request.POST.get('username')
             email = request.POST.get('email')
             password = request.POST.get('password')
             confirm_password = request.POST.get('confirm_password')
-            
-            if password == confirm_password:
-                if User.objects.filter(username=username).exists():
-                    messages.error(request, 'Username already exists.')
-                else:
-                    user = User.objects.create_user(username=username, email=email, password=password)
+
+            if password != confirm_password:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Passwords do not match.'
+                })
+
+            if User.objects.filter(username=username).exists():
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Username already exists.'
+                })
+
+            if User.objects.filter(email=email).exists():
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Email already registered.'
+                })
+
+            # Generate verification code
+            verification_code = str(random.randint(100000, 999999))
+
+            # Store in session
+            request.session['verification_code'] = verification_code
+            request.session['signup_data'] = {
+                'username': username,
+                'email': email,
+                'password': password
+            }
+            request.session['verification_time'] = datetime.now().isoformat()
+            request.session.modified = True
+
+            # Send verification email
+            try:
+                send_mail(
+                    'Verify Your Email - CodeSport',
+                    f'Your verification code is: {verification_code}\n\n'
+                    f'This code will expire in 10 minutes.',
+                    settings.DEFAULT_FROM_EMAIL,
+                    [email],
+                    fail_silently=False,
+                )
+
+                return JsonResponse({
+                    'success': True,
+                    'email': email,
+                    'username': username,
+                    'password': password
+                })
+
+            except Exception as e:
+                # Clean up session
+                request.session.pop('verification_code', None)
+                request.session.pop('signup_data', None)
+                request.session.pop('verification_time', None)
+                request.session.modified = True
+
+                return JsonResponse({
+                    'success': False,
+                    'message': f'Failed to send verification email: {str(e)}'
+                })
+
+        elif action == 'verify_signup':
+            verification_code = request.POST.get('verification_code')
+            email = request.POST.get('email')
+            username = request.POST.get('username')
+            password = request.POST.get('password')
+
+            stored_code = request.session.get('verification_code')
+            signup_data = request.session.get('signup_data')
+
+            if not stored_code or not signup_data:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'No verification session found. Please sign up again.'
+                })
+
+            if verification_code == stored_code:
+                # Create user
+                try:
+                    user = User.objects.create_user(
+                        username=signup_data['username'],
+                        email=signup_data['email'],
+                        password=signup_data['password']
+                    )
                     user.save()
-                    messages.success(request, 'Account created successfully. You can now login.')
+
+                    # Clean up session
+                    request.session.pop('verification_code', None)
+                    request.session.pop('signup_data', None)
+                    request.session.pop('verification_time', None)
+                    request.session.modified = True
+
+                    # Auto-login the user
+                    user = authenticate(
+                        request,
+                        username=signup_data['username'],
+                        password=signup_data['password']
+                    )
+                    if user:
+                        auth_login(request, user)
+                        return JsonResponse({
+                            'success': True,
+                            'redirect_url': '/home/'
+                        })
+
+                except Exception as e:
+                    return JsonResponse({
+                        'success': False,
+                        'message': f'Failed to create account: {str(e)}'
+                    })
             else:
-                messages.error(request, 'Passwords do not match.')
-    
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Invalid verification code.'
+                })
+
+        elif action == 'verify_login':
+            verification_code = request.POST.get('verification_code')
+            username = request.POST.get('username')
+            password = request.POST.get('password')
+
+            stored_code = request.session.get('login_verification_code')
+            stored_username = request.session.get('login_username')
+            stored_password = request.session.get('login_password')
+
+            if not stored_code or not stored_username:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'No login verification session found. Please login again.'
+                })
+
+            if verification_code == stored_code and stored_username == username:
+                user = authenticate(request, username=username, password=stored_password)
+
+                if user is not None:
+                    # Clean up session
+                    request.session.pop('login_verification_code', None)
+                    request.session.pop('login_username', None)
+                    request.session.pop('login_password', None)
+                    request.session.pop('login_verification_time', None)
+                    request.session.modified = True
+
+                    auth_login(request, user)
+                    return JsonResponse({
+                        'success': True,
+                        'redirect_url': '/home/'
+                    })
+                else:
+                    return JsonResponse({
+                        'success': False,
+                        'message': 'Authentication failed. Please try again.'
+                    })
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Invalid verification code.'
+                })
+
+        elif action == 'resend_signup_code':
+            email = request.POST.get('email')
+
+            if email:
+                verification_code = str(random.randint(100000, 999999))
+                request.session['verification_code'] = verification_code
+                request.session['verification_time'] = datetime.now().isoformat()
+                request.session.modified = True
+
+                try:
+                    send_mail(
+                        'Verify Your Email - CodeSport',
+                        f'Your new verification code is: {verification_code}\n\n'
+                        f'This code will expire in 10 minutes.',
+                        settings.DEFAULT_FROM_EMAIL,
+                        [email],
+                        fail_silently=False,
+                    )
+                    return JsonResponse({'success': True, 'message': 'Code sent successfully'})
+                except Exception as e:
+                    return JsonResponse({'success': False, 'message': str(e)})
+
+            return JsonResponse({'success': False, 'message': 'Email is required'})
+
+        elif action == 'resend_login_code':
+            username = request.POST.get('username')
+
+            if username:
+                try:
+                    user = User.objects.get(username=username)
+                    verification_code = str(random.randint(100000, 999999))
+                    request.session['login_verification_code'] = verification_code
+                    request.session['login_verification_time'] = datetime.now().isoformat()
+                    request.session.modified = True
+
+                    send_mail(
+                        'Verify Your Login - CodeSport',
+                        f'Your new login verification code is: {verification_code}\n\n'
+                        f'This code will expire in 10 minutes.',
+                        settings.DEFAULT_FROM_EMAIL,
+                        [user.email],
+                        fail_silently=False,
+                    )
+                    return JsonResponse({'success': True, 'message': 'Code sent successfully'})
+                except User.DoesNotExist:
+                    return JsonResponse({'success': False, 'message': 'User not found'})
+                except Exception as e:
+                    return JsonResponse({'success': False, 'message': str(e)})
+
+            return JsonResponse({'success': False, 'message': 'Username is required'})
+
     return render(request, 'start/login.html')
 
 def home(request):
