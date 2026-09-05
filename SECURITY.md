@@ -35,8 +35,8 @@ If you discover a security vulnerability, **DO NOT** create a public issue.
 
 **Contact privately:**
 - GitHub: [@artemlolnnn](https://github.com/artemlolnnn)
-- Discord: artemlolnnn#1177
-- Email: [your-email@example.com]
+- Discord ID: 912748512746278912
+- Email: [artemkasperovich99@gmail.com]
 
 ### Required Information
 
@@ -146,8 +146,8 @@ This security policy may be updated at any time without notice. Continued access
 
 For security concerns or permissions:
 - **GitHub:** [@artemlolnnn](https://github.com/artemlolnnn)
-- **Discord:** artemlolnnn#1177
-- **Email:** [your-email@example.com]
+- **Discord ID:** 912748512746278912
+- **Email:** [artemkasperovich99@gmail.com]
 
 ---
 
