@@ -39,6 +39,12 @@ urlpatterns = [
     path('leaderboard/', views.leaderboard, name='leaderboard'),
     path('about/', views.about, name='about'),
     path('profile/', views.profile, name='profile'),
+    path('profile/<str:username>/', views.profile, name='user_profile'),
     path('submissions/', views.submissions, name='submissions'),
-    path('logout/', views.logout, name='logout')
+    path('logout/', views.logout, name='logout'),
+    path('control-panel/', views.admin_panel, name='admin_panel'),
+    path('control-panel/delete-problem/<int:problem_id>/', views.delete_problem, name='delete_problem'),
+    path('control-panel/delete-user/<int:user_id>/', views.delete_user, name='delete_user'),
+    path('control-panel/toggle-staff/<int:user_id>/', views.toggle_staff, name='toggle_staff'),
+    path('control-panel/edit-problem/<int:problem_id>/', views.edit_problem, name='edit_problem'),
 ]

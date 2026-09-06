@@ -1,3 +1,4 @@
+from django.core.exceptions import PermissionDenied
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.contrib.auth.models import User
@@ -6,6 +7,8 @@ from django.http import HttpResponse, JsonResponse, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
 from django.conf import settings
+from django.views.decorators.http import require_POST
+
 from .models import *
 from .forms import *
 import subprocess
@@ -303,10 +306,269 @@ def login_view(request):
 
             return JsonResponse({'success': False, 'message': 'Username is required'})
 
+        elif action == 'forgot_password':
+            email = request.POST.get('email')
+
+            try:
+                user = User.objects.get(email=email)
+
+                # Generate reset code
+                reset_code = str(random.randint(100000, 999999))
+
+                # Store in session
+                request.session['reset_code'] = reset_code
+                request.session['reset_email'] = email
+                request.session['reset_time'] = datetime.now().isoformat()
+                request.session.modified = True
+
+                # Send reset email
+                send_mail(
+                    'Password Reset - CodeSport',
+                    f'Your password reset code is: {reset_code}\n\n'
+                    f'This code will expire in 10 minutes.\n\n'
+                    f'If you did not request this, please ignore this email.',
+                    settings.DEFAULT_FROM_EMAIL,
+                    [email],
+                    fail_silently=False,
+                )
+
+                return JsonResponse({
+                    'success': True,
+                    'email': email
+                })
+
+            except User.DoesNotExist:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'No account found with this email.'
+                })
+            except Exception as e:
+                return JsonResponse({
+                    'success': False,
+                    'message': f'Failed to send email: {str(e)}'
+                })
+
+        elif action == 'reset_password':
+            verification_code = request.POST.get('verification_code')
+            email = request.POST.get('email')
+            new_password = request.POST.get('new_password')
+
+            stored_code = request.session.get('reset_code')
+            stored_email = request.session.get('reset_email')
+
+            if not stored_code or not stored_email:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Reset session expired. Please try again.'
+                })
+
+            if stored_email != email:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Email mismatch.'
+                })
+
+            if verification_code != stored_code:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Invalid reset code.'
+                })
+
+            try:
+                user = User.objects.get(email=email)
+                user.set_password(new_password)
+                user.save()
+
+                # Clean up session
+                request.session.pop('reset_code', None)
+                request.session.pop('reset_email', None)
+                request.session.pop('reset_time', None)
+                request.session.modified = True
+
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Password reset successfully!'
+                })
+
+            except User.DoesNotExist:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'User not found.'
+                })
+            except Exception as e:
+                return JsonResponse({
+                    'success': False,
+                    'message': f'Error: {str(e)}'
+                })
+
+        elif action == 'resend_reset_code':
+            email = request.POST.get('email')
+
+            if email:
+                reset_code = str(random.randint(100000, 999999))
+                request.session['reset_code'] = reset_code
+                request.session['reset_time'] = datetime.now().isoformat()
+                request.session.modified = True
+
+                try:
+                    send_mail(
+                        'Password Reset - CodeSport',
+                        f'Your new password reset code is: {reset_code}\n\n'
+                        f'This code will expire in 10 minutes.',
+                        settings.DEFAULT_FROM_EMAIL,
+                        [email],
+                        fail_silently=False,
+                    )
+                    return JsonResponse({'success': True, 'message': 'Code sent successfully'})
+                except Exception as e:
+                    return JsonResponse({'success': False, 'message': str(e)})
+
+            return JsonResponse({'success': False, 'message': 'Email is required'})
+
     return render(request, 'start/login.html')
 
 def home(request):
     return render(request, 'main/home.html')
+
+
+def is_support_official(user):
+    """Check if user is CodeSupportOfficial"""
+    return user.username == 'CodeSupportOfficial'
+
+
+@login_required
+def admin_panel(request):
+    """Admin panel view - only accessible by CodeSupportOfficial"""
+    # Block access if not CodeSupportOfficial
+    if not is_support_official(request.user):
+        raise PermissionDenied("Access denied. Only CodeSupportOfficial can access this page.")
+
+    total_problems = Problem.objects.count()
+    total_users = User.objects.count()
+    total_submissions = Submission.objects.count()
+
+    # Additional stats for CodeSupportOfficial
+    accepted_submissions = Submission.objects.filter(verdict='accepted').count()
+    wrong_submissions = Submission.objects.filter(verdict='wrong_answer').count()
+    active_users = User.objects.filter(is_active=True).count()
+
+    all_problems = Problem.objects.all().order_by('-created_at')
+    all_users = User.objects.all().order_by('-date_joined')
+    recent_submissions = Submission.objects.all().order_by('-submitted_at')[:20]
+
+    context = {
+        'total_problems': total_problems,
+        'total_users': total_users,
+        'total_submissions': total_submissions,
+        'accepted_submissions': accepted_submissions,
+        'wrong_submissions': wrong_submissions,
+        'active_users': active_users,
+        'all_problems': all_problems,
+        'all_users': all_users,
+        'recent_submissions': recent_submissions,
+        'is_support_official': True,
+    }
+
+    return render(request, 'main/admin_panel.html', context)
+
+
+@login_required
+@require_POST
+def delete_problem(request, problem_id):
+    """Delete a problem (CodeSupportOfficial only)"""
+    if not is_support_official(request.user):
+        return JsonResponse({'success': False, 'message': 'Access denied'}, status=403)
+
+    try:
+        problem = Problem.objects.get(id=problem_id)
+        problem.delete()
+        return JsonResponse({'success': True})
+    except Problem.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Problem not found'})
+
+
+@login_required
+@require_POST
+def delete_user(request, user_id):
+    """Delete a user (CodeSupportOfficial only)"""
+    if not is_support_official(request.user):
+        return JsonResponse({'success': False, 'message': 'Access denied'}, status=403)
+
+    try:
+        user = User.objects.get(id=user_id)
+        if user.username == 'CodeSupportOfficial':
+            return JsonResponse({'success': False, 'message': 'Cannot delete main admin account'})
+        user.delete()
+        return JsonResponse({'success': True})
+    except User.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'User not found'})
+
+
+@login_required
+@require_POST
+def toggle_staff(request, user_id):
+    """Toggle staff status for a user (CodeSupportOfficial only)"""
+    # Check if user is CodeSupportOfficial
+    if request.user.username != 'CodeSupportOfficial':
+        return JsonResponse({
+            'success': False,
+            'message': 'Access denied. Only CodeSupportOfficial can perform this action.'
+        }, status=403)
+
+    try:
+        user = User.objects.get(id=user_id)
+
+        # Prevent modifying CodeSupportOfficial account
+        if user.username == 'CodeSupportOfficial':
+            return JsonResponse({
+                'success': False,
+                'message': 'Cannot modify CodeSupportOfficial account.'
+            })
+
+        # Toggle staff status
+        user.is_staff = not user.is_staff
+        user.save()
+
+
+        return JsonResponse({
+            'success': True,
+            'message': f'Admin status {"granted" if user.is_staff else "revoked"} for {user.username}',
+            'is_staff': user.is_staff
+        })
+
+    except User.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'message': 'User not found.'
+        }, status=404)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Error: {str(e)}'
+        }, status=500)
+
+
+@login_required
+def edit_problem(request, problem_id):
+    if not is_support_official(request.user):
+        raise PermissionDenied("Access denied")
+
+    problem = get_object_or_404(Problem, id=problem_id)
+
+    if request.method == 'POST':
+        form = ProblemForm(request.POST, instance=problem)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Problem updated successfully!')
+            return redirect('admin_panel')  # This will use the new URL name
+    else:
+        form = ProblemForm(instance=problem)
+
+    return render(request, 'main/edit_problem.html', {
+        'form': form,
+        'problem': problem
+    })
+
 
 @login_required
 def problems(request):
@@ -491,7 +753,7 @@ def run_code(code, language, test_cases):
                     input=test_case.input,
                     text=True,
                     capture_output=True,
-                    timeout=5
+                    timeout=1
                 )
                 
                 output = process.stdout.strip()
@@ -596,6 +858,7 @@ def profile(request, username=None):
         'created_problems': created_problems,
         'achievements': achievements,
     }
+
 
     return render(request, 'main/profile.html', context)
 

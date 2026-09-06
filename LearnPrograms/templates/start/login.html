@@ -33,13 +33,13 @@
 
         .form-container {
             display: flex;
-            width: 400%;
+            width: 600%;
             transition: transform 0.6s ease-in-out;
         }
 
-        .login-container, .signup-container, .verify-signup-container, .verify-login-container {
+        .login-container, .signup-container, .verify-signup-container, .verify-login-container, .forgot-password-container, .reset-password-container {
             padding: 30px;
-            width: 25%;
+            width: 16.66%;
         }
 
         h2 {
@@ -169,6 +169,16 @@
             text-decoration: underline;
         }
 
+        .forgot-password-link {
+            color: #6a11cb;
+            cursor: pointer;
+            text-decoration: underline;
+            font-size: 14px;
+            text-align: center;
+            display: block;
+            margin-top: 10px;
+        }
+
         @media (max-width: 500px) {
             .container {
                 width: 100%;
@@ -205,6 +215,9 @@
                     </div>
                     <button type="submit">Login</button>
                 </form>
+
+                <span class="forgot-password-link" onclick="showForgotPassword()">Forgot Password?</span>
+
                 <div class="toggle-container">
                     <p>Don't have an account? <span class="toggle" onclick="showSignup()">Sign Up</span></p>
                 </div>
@@ -325,6 +338,71 @@
                     <p><span class="back-link" onclick="showLogin()">← Back to Login</span></p>
                 </div>
             </div>
+
+            <!-- Forgot Password Section -->
+            <div class="forgot-password-container">
+                <h2>Forgot Password</h2>
+                <p class="subtitle">Enter your email to receive a reset code</p>
+
+                <form method="POST" action="{% url 'login' %}" id="forgotPasswordForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="forgot_password">
+                    <div class="form-control">
+                        <label for="forgot-email">Email</label>
+                        <input type="email" id="forgot-email" name="email" placeholder="Enter your email" required>
+                    </div>
+                    <button type="submit">Send Reset Code</button>
+                </form>
+
+                <div class="toggle-container">
+                    <p><span class="back-link" onclick="showLogin()">← Back to Login</span></p>
+                </div>
+            </div>
+
+            <!-- Reset Password Section -->
+            <div class="reset-password-container">
+                <h2>Reset Password</h2>
+                <p class="subtitle">
+                    Enter the code sent to<br>
+                    <strong id="resetEmail"></strong>
+                </p>
+
+                <form method="POST" action="{% url 'login' %}" id="resetPasswordForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="reset_password">
+                    <input type="hidden" name="email" id="resetPasswordEmail" value="">
+                    <div class="form-control">
+                        <label for="reset-code">Verification Code</label>
+                        <input type="text"
+                               id="reset-code"
+                               name="verification_code"
+                               class="verification-code-input"
+                               placeholder="••••••"
+                               maxlength="6"
+                               pattern="[0-9]{6}"
+                               required>
+                    </div>
+                    <div class="form-control">
+                        <label for="new-password">New Password</label>
+                        <input type="password" id="new-password" name="new_password" placeholder="Enter new password" required>
+                    </div>
+                    <div class="form-control">
+                        <label for="confirm-new-password">Confirm New Password</label>
+                        <input type="password" id="confirm-new-password" name="confirm_new_password" placeholder="Confirm new password" required>
+                    </div>
+                    <button type="submit">Reset Password</button>
+                </form>
+
+                <div class="timer" id="resetTimer"></div>
+
+                <button class="resend-button" id="resetResendButton" onclick="resendResetCode()" disabled>
+                    Resend Code
+                </button>
+
+                <div class="toggle-container">
+                    <p><span class="back-link" onclick="showLogin()">← Back to Login</span></p>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -332,12 +410,14 @@
     let currentPosition = 0;
     let signupTimerInterval;
     let loginTimerInterval;
+    let resetTimerInterval;
     let signupTimerSeconds = 60;
     let loginTimerSeconds = 60;
+    let resetTimerSeconds = 60;
 
     function updateFormPosition() {
         const formContainer = document.getElementById('formContainer');
-        formContainer.style.transform = `translateX(-${currentPosition * 25}%)`;
+        formContainer.style.transform = `translateX(-${currentPosition * 16.66}%)`;
     }
 
     function showLogin() {
@@ -367,6 +447,19 @@
         document.getElementById('loginVerifyUsername').value = username;
         document.getElementById('loginVerifyPassword').value = password;
         startLoginTimer();
+    }
+
+    function showForgotPassword() {
+        currentPosition = 4;
+        updateFormPosition();
+    }
+
+    function showResetPassword(email) {
+        currentPosition = 5;
+        updateFormPosition();
+        document.getElementById('resetEmail').textContent = email;
+        document.getElementById('resetPasswordEmail').value = email;
+        startResetTimer();
     }
 
     function startSignupTimer() {
@@ -419,6 +512,31 @@
         }
     }
 
+    function startResetTimer() {
+        resetTimerSeconds = 60;
+        updateResetTimerDisplay();
+        document.getElementById('resetResendButton').disabled = true;
+
+        clearInterval(resetTimerInterval);
+        resetTimerInterval = setInterval(() => {
+            resetTimerSeconds--;
+            updateResetTimerDisplay();
+
+            if (resetTimerSeconds <= 0) {
+                clearInterval(resetTimerInterval);
+                document.getElementById('resetResendButton').disabled = false;
+                document.getElementById('resetTimer').textContent = '';
+            }
+        }, 1000);
+    }
+
+    function updateResetTimerDisplay() {
+        if (resetTimerSeconds > 0) {
+            document.getElementById('resetTimer').textContent =
+                `Resend code in ${resetTimerSeconds} seconds`;
+        }
+    }
+
     function resendSignupCode() {
         const email = document.getElementById('signupVerifyEmail').value;
 
@@ -461,6 +579,32 @@
             if (data.success) {
                 startLoginTimer();
                 alert('New verification code sent to your email');
+            } else {
+                alert(data.message || 'Failed to resend code');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        });
+    }
+
+    function resendResetCode() {
+        const email = document.getElementById('resetPasswordEmail').value;
+
+        fetch('{% url "login" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: `action=resend_reset_code&email=${encodeURIComponent(email)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                startResetTimer();
+                alert('New reset code sent to your email');
             } else {
                 alert(data.message || 'Failed to resend code');
             }
@@ -546,7 +690,6 @@
                         data.email
                     );
                 } else if (data.success) {
-                    // Handle successful login (should not happen without verification)
                     window.location.href = data.redirect_url || '/home/';
                 } else {
                     alert(data.message || 'Login failed');
@@ -574,7 +717,6 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Redirect to home page
                     window.location.href = data.redirect_url || '/home/';
                 } else {
                     alert(data.message || 'Verification failed');
@@ -602,10 +744,77 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Redirect to home page
                     window.location.href = data.redirect_url || '/home/';
                 } else {
                     alert(data.message || 'Verification failed');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            });
+        });
+
+        // Handle forgot password form with AJAX
+        document.getElementById('forgotPasswordForm')?.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+
+            fetch('{% url "login" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showResetPassword(data.email);
+                } else {
+                    alert(data.message || 'Failed to send reset code');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            });
+        });
+
+        // Handle reset password form with AJAX
+        document.getElementById('resetPasswordForm')?.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const newPassword = document.getElementById('new-password').value;
+            const confirmNewPassword = document.getElementById('confirm-new-password').value;
+
+            if (newPassword !== confirmNewPassword) {
+                alert('Passwords do not match!');
+                return;
+            }
+
+            if (newPassword.length < 8) {
+                alert('Password must be at least 8 characters long!');
+                return;
+            }
+
+            const formData = new FormData(this);
+
+            fetch('{% url "login" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Password reset successfully! Please login with your new password.');
+                    showLogin();
+                } else {
+                    alert(data.message || 'Failed to reset password');
                 }
             })
             .catch(error => {

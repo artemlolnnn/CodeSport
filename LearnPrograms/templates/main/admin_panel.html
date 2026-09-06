@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - CodeSport</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #3498db;
+            --secondary: #2c3e50;
+            --accent: #e74c3c;
+            --light: #ecf0f1;
+            --dark: #2c3e50;
+            --success: #2ecc71;
+            --warning: #f39c12;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            padding-bottom: 3rem;
+        }
+
+        .navbar {
+            background-color: var(--secondary);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            color: var(--primary) !important;
+            font-size: 1.5rem;
+        }
+
+        .nav-link {
+            color: white !important;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-link:hover {
+            color: var(--primary) !important;
+        }
+
+        .admin-header {
+            background: linear-gradient(135deg, #1a2530 0%, var(--secondary) 100%);
+            color: white;
+            padding: 3rem 0;
+            margin-bottom: 2rem;
+        }
+
+        .admin-header h1 {
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .admin-badge {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            transition: transform 0.3s;
+            text-align: center;
+            height: 100%;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #6c757d;
+        }
+
+        .admin-section {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+
+        .admin-section-header {
+            background: var(--secondary);
+            color: white;
+            padding: 1rem 1.5rem;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table {
+            margin-bottom: 0;
+        }
+
+        .table thead th {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+            padding: 1rem;
+        }
+
+        .table tbody td {
+            padding: 1rem;
+            vertical-align: middle;
+        }
+
+        .table tbody tr {
+            transition: background-color 0.2s;
+        }
+
+        .table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .btn-action {
+            padding: 0.3rem 0.6rem;
+            font-size: 0.85rem;
+        }
+
+        .verdict-badge {
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .verdict-accepted {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .verdict-wrong_answer {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .footer {
+            background-color: var(--secondary);
+            color: white;
+            padding: 1.5rem 0;
+            margin-top: 3rem;
+        }
+
+        .footer a {
+            color: var(--light);
+            text-decoration: none;
+        }
+
+        .search-box {
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            padding: 0.5rem 1rem;
+        }
+
+        .filter-select {
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            padding: 0.5rem 1rem;
+        }
+
+        .special-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn-special {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .btn-special:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'home' %}">
+                <i class="fas fa-code me-2"></i>CodeSport
+            </a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item"><a class="nav-link" href="{% url 'home' %}">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'problems' %}">Problems</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'contests' %}">Contests</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'leaderboard' %}">Leaderboard</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'about' %}">About</a></li>
+                    {% if user.username == 'CodeSupportOfficial' %}
+                    <li class="nav-item"><a class="nav-link active" href="{% url 'admin_panel' %}">
+                        <i class="fas fa-shield-alt me-1"></i>Admin Panel
+                    </a></li>
+                    {% endif %}
+                </ul>
+
+                <ul class="navbar-nav">
+                    {% if user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle me-1"></i> {{ user.username }}
+                            {% if user.username == 'CodeSupportOfficial' %}
+                            <span class="special-badge ms-1">👑 Support Admin</span>
+                            {% endif %}
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'profile' %}">Profile</a></li>
+                            <li><a class="dropdown-item" href="{% url 'submissions' %}">Submissions</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'user_problems' %}">My Problems</a></li>
+                            {% if user.username == 'CodeSupportOfficial' %}
+                            <li><a class="dropdown-item" href="{% url 'admin_panel' %}">
+                                <i class="fas fa-shield-alt me-1"></i>Admin Panel
+                            </a></li>
+                            {% endif %}
+                            <li><a class="dropdown-item" href="{% url 'logout' %}">Logout</a></li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Login</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Register</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Admin Header -->
+    <div class="admin-header">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1><i class="fas fa-crown me-2"></i>Admin Panel</h1>
+                    <p class="mb-0">Welcome back, <strong>CodeSupportOfficial</strong>! You have full control.</p>
+                </div>
+                <span class="admin-badge">
+                    <i class="fas fa-lock me-1"></i>Exclusive Access
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Statistics Cards -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-3 col-sm-6">
+                <div class="stat-card">
+                    <div class="stat-number">{{ total_problems }}</div>
+                    <div class="stat-label">Total Problems</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="stat-card">
+                    <div class="stat-number">{{ total_users }}</div>
+                    <div class="stat-label">Total Users</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="stat-card">
+                    <div class="stat-number text-success">{{ total_submissions }}</div>
+                    <div class="stat-label">Submissions</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="stat-card">
+                    <div class="stat-number text-warning">{{ active_users }}</div>
+                    <div class="stat-label">Active Users</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="admin-section mb-4">
+            <div class="admin-section-header">
+                <span><i class="fas fa-bolt me-2"></i>Quick Actions</span>
+            </div>
+            <div class="p-3">
+                <div class="quick-actions">
+                    <a href="{% url 'create_problem' %}" class="btn btn-special">
+                        <i class="fas fa-plus me-1"></i>Create Problem
+                    </a>
+                    <a href="{% url 'problems' %}" class="btn btn-primary">
+                        <i class="fas fa-list me-1"></i>View All Problems
+                    </a>
+                    <a href="{% url 'submissions' %}" class="btn btn-info">
+                        <i class="fas fa-history me-1"></i>View Submissions
+                    </a>
+                    <button class="btn btn-warning" onclick="exportData()">
+                        <i class="fas fa-download me-1"></i>Export Data
+                    </button>
+                    <button class="btn btn-danger" onclick="clearCache()">
+                        <i class="fas fa-broom me-1"></i>Clear Cache
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Problems Management Section -->
+        <div class="admin-section">
+            <div class="admin-section-header">
+                <span><i class="fas fa-file-code me-2"></i>Problems Management</span>
+                <div>
+                    <input type="text" class="search-box" placeholder="Search problems..." id="problemSearch">
+                    <select class="filter-select ms-2" id="difficultyFilter">
+                        <option value="">All Difficulties</option>
+                        <option value="easy">Easy</option>
+                        <option value="medium">Medium</option>
+                        <option value="hard">Hard</option>
+                    </select>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Title</th>
+                            <th>Author</th>
+                            <th>Difficulty</th>
+                            <th>Created</th>
+                            <th>Submissions</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for problem in all_problems %}
+                        <tr class="problem-row" data-difficulty="{{ problem.difficulty }}">
+                            <td>#{{ problem.id }}</td>
+                            <td>
+                                <a href="{% url 'problem_detail' problem.id %}" class="text-decoration-none">
+                                    {{ problem.title }}
+                                </a>
+                            </td>
+                            <td>{{ problem.author.username }}</td>
+                            <td>
+                                <span class="badge bg-{{ problem.difficulty }}">
+                                    {{ problem.difficulty|title }}
+                                </span>
+                            </td>
+                            <td>{{ problem.created_at|date:"M d, Y" }}</td>
+                            <td>{{ problem.submission_set.count }}</td>
+                            <td>
+                                <a href="{% url 'edit_problem' problem.id %}" class="btn btn-sm btn-outline-primary btn-action">
+                                    <i class="fas fa-edit"></i> Edit
+                                </a>
+                                <a href="{% url 'add_test_cases' problem.id %}" class="btn btn-sm btn-outline-info btn-action">
+                                    <i class="fas fa-vial"></i> Test Cases
+                                </a>
+                                <button class="btn btn-sm btn-outline-danger btn-action" onclick="deleteProblem({{ problem.id }})">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">
+                                No problems found
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Users Management Section -->
+        <div class="admin-section">
+            <div class="admin-section-header">
+                <span><i class="fas fa-users me-2"></i>Users Management</span>
+                <div>
+                    <input type="text" class="search-box" placeholder="Search users..." id="userSearch">
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Status</th>
+                            <th>Date Joined</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in all_users %}
+                        <tr>
+                            <td>#{{ user.id }}</td>
+                            <td>
+                                {{ user.username }}
+                                {% if user.username == 'CodeSupportOfficial' %}
+                                <span class="special-badge ms-1">👑 Support Admin</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ user.email }}</td>
+                            <td>
+                                {% if user.is_staff %}
+                                <span class="badge bg-danger">Admin</span>
+                                {% else %}
+                                <span class="badge bg-secondary">User</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ user.date_joined|date:"M d, Y" }}</td>
+                            <td>
+                                <a href="{% url 'user_profile' user.username %}" class="btn btn-sm btn-outline-info btn-action">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                                {% if user.username != 'CodeSupportOfficial' %}
+                                <button class="btn btn-sm btn-outline-warning btn-action" onclick="toggleStaff({{ user.id }})">
+                                    <i class="fas fa-user-shield"></i> Toggle Admin
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger btn-action" onclick="deleteUser({{ user.id }})">
+                                    <i class="fas fa-user-slash"></i> Delete
+                                </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">
+                                No users found
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Recent Submissions Section -->
+        <div class="admin-section">
+            <div class="admin-section-header">
+                <span><i class="fas fa-history me-2"></i>Recent Submissions</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>User</th>
+                            <th>Problem</th>
+                            <th>Verdict</th>
+                            <th>Submitted At</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for submission in recent_submissions %}
+                        <tr>
+                            <td>#{{ submission.id }}</td>
+                            <td>{{ submission.user.username }}</td>
+                            <td>{{ submission.problem.title }}</td>
+                            <td>
+                                <span class="verdict-badge verdict-{{ submission.verdict }}">
+                                    {{ submission.verdict|title }}
+                                </span>
+                            </td>
+                            <td>{{ submission.submitted_at|date:"M d, Y H:i" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-4 text-muted">
+                                No submissions found
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer mt-5">
+        <div class="container text-center">
+            <p class="mb-0">&copy; 2025 CodeSport. All rights reserved. |
+                <a href="#" class="me-2">Privacy</a>
+                <a href="#" class="me-2">Terms</a>
+                <a href="{% url 'about' %}">About</a>
+            </p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+
+    <script>
+        // Search functionality
+        document.getElementById('problemSearch')?.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const rows = document.querySelectorAll('.problem-row');
+
+            rows.forEach(row => {
+                const title = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                const author = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+
+                if (title.includes(searchTerm) || author.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+
+        // Difficulty filter
+        document.getElementById('difficultyFilter')?.addEventListener('change', function() {
+            const filter = this.value;
+            const rows = document.querySelectorAll('.problem-row');
+
+            rows.forEach(row => {
+                if (!filter || row.dataset.difficulty === filter) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+
+        // User search
+        document.getElementById('userSearch')?.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const table = document.querySelectorAll('.admin-section')[1]; // Users section
+            const rows = table?.querySelectorAll('tbody tr');
+
+            rows?.forEach(row => {
+                const username = row.querySelector('td:nth-child(2)')?.textContent.toLowerCase();
+                const email = row.querySelector('td:nth-child(3)')?.textContent.toLowerCase();
+
+                if (username && (username.includes(searchTerm) || email.includes(searchTerm))) {
+                    row.style.display = '';
+                } else if (username) {
+                    row.style.display = 'none';
+                }
+            });
+        });
+
+        function deleteProblem(problemId) {
+            if (confirm('Are you sure you want to delete this problem?')) {
+                fetch(`/control-panel/delete-problem/${problemId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert(data.message || 'Failed to delete problem');
+                    }
+                });
+            }
+        }
+
+        function deleteUser(userId) {
+            if (confirm('Are you sure you want to delete this user?')) {
+                fetch(`/control-panel/delete-user/${userId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert(data.message || 'Failed to delete user');
+                    }
+                });
+            }
+        }
+
+        function toggleStaff(userId) {
+            // Get CSRF token
+            const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+            fetch(`/control-panel/toggle-staff/${userId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken,
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    alert(data.message || 'Admin status updated successfully');
+                    // Reload the page to reflect changes
+                    location.reload();
+                } else {
+                    alert(data.message || 'Failed to toggle admin status');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            });
+        }
+
+        function exportData() {
+            alert('Export functionality coming soon!');
+        }
+
+        function clearCache() {
+            if (confirm('Clear application cache?')) {
+                alert('Cache cleared successfully!');
+            }
+        }
+    </script>
+</body>
+</html>
