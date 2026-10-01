@@ -1,3 +1,6 @@
+import secrets
+
+from django.contrib.auth.hashers import make_password
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
@@ -9,6 +12,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.views.decorators.http import require_POST
 
+from .judge.sandbox import run_sandboxed
 from .models import *
 from .forms import *
 import random
@@ -16,8 +20,62 @@ import json
 from datetime import datetime, timedelta
 import os, re, shutil, subprocess, sys, tempfile, logging
 
+from .utils.throttle import (get_client_ip, throttle, gen_code,
+                       code_is_fresh, bump_attempt,
+                       CODE_TTL, MAX_CODE_ATTEMPTS)
+
+import signal as _signal
+
+# ДЛЯ КОДА
+DEFAULT_LIMITS = dict(mem_mb=256, fsize_mb=16, nproc=32)
+JAVA_LIMITS    = dict(mem_mb=512, fsize_mb=16, nproc=64)
+COMPILE_LIMITS = dict(mem_mb=1024, fsize_mb=64, nproc=128)
+
 logger = logging.getLogger(__name__)
 
+# ДЛЯ ЗАШИТЫ ОТ СПАМА
+ACTION_LIMITS = {
+    'login':              (5,  60),    # 5 логинов / мин с IP
+    'signup':             (5,  300),   # 5 регистраций / 5 мин с IP
+    'verify_signup':      (10, 300),
+    'verify_login':       (10, 300),
+    'resend_signup_code': (3,  300),
+    'resend_login_code':  (3,  300),
+    'forgot_password':    (3,  600),
+    'reset_password':     (10, 600),
+    'resend_reset_code':  (3,  600),
+}
+
+EMAIL_ACTIONS = {
+    'signup', 'resend_signup_code', 'resend_login_code',
+    'forgot_password', 'resend_reset_code',
+}
+EMAIL_LIMIT = (3, 600)   # 3 письма / 10 мин на адрес
+
+SIGNUP_SESSION_KEYS = ('verification_code', 'signup_data',
+                       'verification_time', 'signup_code_attempts')
+LOGIN_SESSION_KEYS = ('login_verification_code', 'login_user_id',
+                      'login_verification_time', 'login_code_attempts')
+RESET_SESSION_KEYS = ('reset_code', 'reset_email',
+                      'reset_time', 'reset_code_attempts')
+
+def _clear_session(request, keys):
+    for k in keys:
+        request.session.pop(k, None)
+    request.session.modified = True
+
+def _as_text(value):
+    if value is None:
+        return ''
+    if isinstance(value, bytes):
+        return value.decode('utf-8', errors='replace')
+    return str(value)
+
+def _too_many(retry):
+    return JsonResponse({
+        'success': False,
+        'message': f'Слишком много запросов. Повторите через {retry} сек.'
+    }, status=429)
 
 def login_view(request):
     if request.user.is_authenticated:
@@ -25,110 +83,107 @@ def login_view(request):
 
     if request.method == "POST":
         action = request.POST.get('action')
+        ip = get_client_ip(request)
 
+        # --- Лимит по IP для действия ---
+        limits = ACTION_LIMITS.get(action)
+        if limits:
+            allowed, retry = throttle(f'{action}:ip:{ip}', *limits)
+            if not allowed:
+                return _too_many(retry)
+
+        # --- Отдельный лимит на отправку писем по адресу ---
+        if action in EMAIL_ACTIONS:
+            email = (request.POST.get('email') or '').strip().lower()
+            if email:
+                allowed, retry = throttle(f'{action}:email:{email}', *EMAIL_LIMIT)
+                if not allowed:
+                    return _too_many(retry)
+
+        # ---------------- LOGIN ----------------
         if action == 'login':
-            username = request.POST.get('username')
-            password = request.POST.get('password')
+            username = (request.POST.get('username') or '').strip()
+            password = request.POST.get('password') or ''
 
-            # Check if user entered email
             if '@' in username:
-                try:
-                    user_obj = User.objects.get(email=username)
+                user_obj = User.objects.filter(email__iexact=username).first()
+                if user_obj:
                     username = user_obj.username
-                except User.DoesNotExist:
-                    return JsonResponse({
-                        'success': False,
-                        'message': 'No account found with this email.'
-                    })
 
             user = authenticate(request, username=username, password=password)
-
-            if user is not None:
-                # Generate verification code for login
-                verification_code = str(random.randint(100000, 999999))
-
-                # Store in session
-                request.session['login_verification_code'] = verification_code
-                request.session['login_username'] = username
-                request.session['login_password'] = password
-                request.session['login_verification_time'] = datetime.now().isoformat()
-                request.session.modified = True
-
-                # Send verification email
-                try:
-                    send_mail(
-                        'Verify Your Login - CodeSport',
-                        f'Your login verification code is: {verification_code}\n\n'
-                        f'This code will expire in 10 minutes.\n\n'
-                        f'If you did not attempt to login, please ignore this email.',
-                        settings.DEFAULT_FROM_EMAIL,
-                        [user.email],
-                        fail_silently=False,
-                    )
-
-                    return JsonResponse({
-                        'requires_verification': True,
-                        'username': username,
-                        'password': password,
-                        'email': user.email
-                    })
-
-                except Exception as e:
-                    # Clean up session
-                    request.session.pop('login_verification_code', None)
-                    request.session.pop('login_username', None)
-                    request.session.pop('login_password', None)
-                    request.session.pop('login_verification_time', None)
-                    request.session.modified = True
-
-                    return JsonResponse({
-                        'success': False,
-                        'message': f'Failed to send verification email: {str(e)}'
-                    })
-            else:
+            if user is None:
+                # Не раскрываем, существует ли аккаунт
                 return JsonResponse({
                     'success': False,
-                    'message': 'Invalid username/email or password.'
+                    'message': 'Неверный логин/email или пароль.'
                 })
 
+            # Дополнительный лимит по конкретному пользователю
+            allowed, retry = throttle(f'login:user:{user.id}', 10, 300)
+            if not allowed:
+                return _too_many(retry)
+
+            verification_code = gen_code()
+            request.session['login_verification_code'] = verification_code
+            request.session['login_user_id'] = user.id
+            request.session['login_verification_time'] = datetime.now().isoformat()
+            request.session['login_code_attempts'] = 0
+            request.session.modified = True
+
+            try:
+                send_mail(
+                    'Verify Your Login - CodeSport',
+                    f'Your login verification code is: {verification_code}\n\n'
+                    f'This code will expire in 10 minutes.\n\n'
+                    f'If you did not attempt to login, please ignore this email.',
+                    settings.DEFAULT_FROM_EMAIL,
+                    [user.email],
+                    fail_silently=False,
+                )
+            except Exception:
+                _clear_session(request, LOGIN_SESSION_KEYS)
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Не удалось отправить код. Попробуйте позже.'
+                })
+
+            # Пароль больше НЕ уходит клиенту и НЕ лежит в сессии
+            return JsonResponse({
+                'requires_verification': True,
+                'username': username,
+                'email': user.email,
+            })
+
+        # ---------------- SIGNUP ----------------
         elif action == 'signup':
-            username = request.POST.get('username')
-            email = request.POST.get('email')
-            password = request.POST.get('password')
-            confirm_password = request.POST.get('confirm_password')
+            username = (request.POST.get('username') or '').strip()
+            email = (request.POST.get('email') or '').strip().lower()
+            password = request.POST.get('password') or ''
+            confirm_password = request.POST.get('confirm_password') or ''
 
+            if not username or not email or not password:
+                return JsonResponse({'success': False, 'message': 'Заполните все поля.'})
             if password != confirm_password:
-                return JsonResponse({
-                    'success': False,
-                    'message': 'Passwords do not match.'
-                })
+                return JsonResponse({'success': False, 'message': 'Пароли не совпадают.'})
+            if len(password) < 8:
+                return JsonResponse({'success': False, 'message': 'Пароль слишком короткий.'})
+            if User.objects.filter(username__iexact=username).exists():
+                return JsonResponse({'success': False, 'message': 'Имя пользователя занято.'})
+            if User.objects.filter(email__iexact=email).exists():
+                return JsonResponse({'success': False, 'message': 'Email уже зарегистрирован.'})
 
-            if User.objects.filter(username=username).exists():
-                return JsonResponse({
-                    'success': False,
-                    'message': 'Username already exists.'
-                })
-
-            if User.objects.filter(email=email).exists():
-                return JsonResponse({
-                    'success': False,
-                    'message': 'Email already registered.'
-                })
-
-            # Generate verification code
-            verification_code = str(random.randint(100000, 999999))
-
-            # Store in session
+            verification_code = gen_code()
             request.session['verification_code'] = verification_code
             request.session['signup_data'] = {
                 'username': username,
                 'email': email,
-                'password': password
+                # Храним ХЭШ, а не открытый пароль
+                'password_hash': make_password(password),
             }
             request.session['verification_time'] = datetime.now().isoformat()
+            request.session['signup_code_attempts'] = 0
             request.session.modified = True
 
-            # Send verification email
             try:
                 send_mail(
                     'Verify Your Email - CodeSport',
@@ -138,292 +193,232 @@ def login_view(request):
                     [email],
                     fail_silently=False,
                 )
-
-                return JsonResponse({
-                    'success': True,
-                    'email': email,
-                    'username': username,
-                    'password': password
-                })
-
-            except Exception as e:
-                # Clean up session
-                request.session.pop('verification_code', None)
-                request.session.pop('signup_data', None)
-                request.session.pop('verification_time', None)
-                request.session.modified = True
-
+            except Exception:
+                _clear_session(request, SIGNUP_SESSION_KEYS)
                 return JsonResponse({
                     'success': False,
-                    'message': f'Failed to send verification email: {str(e)}'
+                    'message': 'Не удалось отправить письмо. Попробуйте позже.'
                 })
 
-        elif action == 'verify_signup':
-            verification_code = request.POST.get('verification_code')
-            email = request.POST.get('email')
-            username = request.POST.get('username')
-            password = request.POST.get('password')
+            return JsonResponse({'success': True, 'email': email, 'username': username})
 
-            stored_code = request.session.get('verification_code')
+        # ---------------- VERIFY SIGNUP ----------------
+        elif action == 'verify_signup':
+            verification_code = (request.POST.get('verification_code') or '').strip()
             signup_data = request.session.get('signup_data')
+            stored_code = request.session.get('verification_code')
 
             if not stored_code or not signup_data:
                 return JsonResponse({
                     'success': False,
-                    'message': 'No verification session found. Please sign up again.'
+                    'message': 'Сессия истекла. Зарегистрируйтесь заново.'
                 })
 
-            if verification_code == stored_code:
-                # Create user
-                try:
-                    user = User.objects.create_user(
-                        username=signup_data['username'],
-                        email=signup_data['email'],
-                        password=signup_data['password']
-                    )
-                    user.save()
+            if not code_is_fresh(request.session, 'verification_time'):
+                _clear_session(request, SIGNUP_SESSION_KEYS)
+                return JsonResponse({'success': False, 'message': 'Код истёк.'})
 
-                    # Clean up session
-                    request.session.pop('verification_code', None)
-                    request.session.pop('signup_data', None)
-                    request.session.pop('verification_time', None)
-                    request.session.modified = True
+            if bump_attempt(request.session, 'signup_code_attempts') > MAX_CODE_ATTEMPTS:
+                _clear_session(request, SIGNUP_SESSION_KEYS)
+                return JsonResponse({'success': False, 'message': 'Слишком много попыток.'})
 
-                    # Auto-login the user
-                    user = authenticate(
-                        request,
-                        username=signup_data['username'],
-                        password=signup_data['password']
-                    )
-                    if user:
-                        auth_login(request, user)
-                        return JsonResponse({
-                            'success': True,
-                            'redirect_url': '/home/'
-                        })
-
-                except Exception as e:
-                    return JsonResponse({
-                        'success': False,
-                        'message': f'Failed to create account: {str(e)}'
-                    })
-            else:
-                return JsonResponse({
-                    'success': False,
-                    'message': 'Invalid verification code.'
-                })
-
-        elif action == 'verify_login':
-            verification_code = request.POST.get('verification_code')
-            username = request.POST.get('username')
-            password = request.POST.get('password')
-
-            stored_code = request.session.get('login_verification_code')
-            stored_username = request.session.get('login_username')
-            stored_password = request.session.get('login_password')
-
-            if not stored_code or not stored_username:
-                return JsonResponse({
-                    'success': False,
-                    'message': 'No login verification session found. Please login again.'
-                })
-
-            if verification_code == stored_code and stored_username == username:
-                user = authenticate(request, username=username, password=stored_password)
-
-                if user is not None:
-                    # Clean up session
-                    request.session.pop('login_verification_code', None)
-                    request.session.pop('login_username', None)
-                    request.session.pop('login_password', None)
-                    request.session.pop('login_verification_time', None)
-                    request.session.modified = True
-
-                    auth_login(request, user)
-                    return JsonResponse({
-                        'success': True,
-                        'redirect_url': '/home/'
-                    })
-                else:
-                    return JsonResponse({
-                        'success': False,
-                        'message': 'Authentication failed. Please try again.'
-                    })
-            else:
-                return JsonResponse({
-                    'success': False,
-                    'message': 'Invalid verification code.'
-                })
-
-        elif action == 'resend_signup_code':
-            email = request.POST.get('email')
-
-            if email:
-                verification_code = str(random.randint(100000, 999999))
-                request.session['verification_code'] = verification_code
-                request.session['verification_time'] = datetime.now().isoformat()
-                request.session.modified = True
-
-                try:
-                    send_mail(
-                        'Verify Your Email - CodeSport',
-                        f'Your new verification code is: {verification_code}\n\n'
-                        f'This code will expire in 10 minutes.',
-                        settings.DEFAULT_FROM_EMAIL,
-                        [email],
-                        fail_silently=False,
-                    )
-                    return JsonResponse({'success': True, 'message': 'Code sent successfully'})
-                except Exception as e:
-                    return JsonResponse({'success': False, 'message': str(e)})
-
-            return JsonResponse({'success': False, 'message': 'Email is required'})
-
-        elif action == 'resend_login_code':
-            username = request.POST.get('username')
-
-            if username:
-                try:
-                    user = User.objects.get(username=username)
-                    verification_code = str(random.randint(100000, 999999))
-                    request.session['login_verification_code'] = verification_code
-                    request.session['login_verification_time'] = datetime.now().isoformat()
-                    request.session.modified = True
-
-                    send_mail(
-                        'Verify Your Login - CodeSport',
-                        f'Your new login verification code is: {verification_code}\n\n'
-                        f'This code will expire in 10 minutes.',
-                        settings.DEFAULT_FROM_EMAIL,
-                        [user.email],
-                        fail_silently=False,
-                    )
-                    return JsonResponse({'success': True, 'message': 'Code sent successfully'})
-                except User.DoesNotExist:
-                    return JsonResponse({'success': False, 'message': 'User not found'})
-                except Exception as e:
-                    return JsonResponse({'success': False, 'message': str(e)})
-
-            return JsonResponse({'success': False, 'message': 'Username is required'})
-
-        elif action == 'forgot_password':
-            email = request.POST.get('email')
+            if not secrets.compare_digest(verification_code, stored_code):
+                return JsonResponse({'success': False, 'message': 'Неверный код.'})
 
             try:
-                user = User.objects.get(email=email)
+                user = User(
+                    username=signup_data['username'],
+                    email=signup_data['email'],
+                )
+                user.password = signup_data['password_hash']
+                user.save()
+            except Exception:
+                return JsonResponse({'success': False, 'message': 'Не удалось создать аккаунт.'})
 
-                # Generate reset code
-                reset_code = str(random.randint(100000, 999999))
+            _clear_session(request, SIGNUP_SESSION_KEYS)
+            auth_login(request, user)
+            return JsonResponse({'success': True, 'redirect_url': '/home/'})
 
-                # Store in session
+        # ---------------- VERIFY LOGIN ----------------
+        elif action == 'verify_login':
+            verification_code = (request.POST.get('verification_code') or '').strip()
+            stored_code = request.session.get('login_verification_code')
+            user_id = request.session.get('login_user_id')
+
+            if not stored_code or not user_id:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Сессия истекла. Войдите заново.'
+                })
+
+            if not code_is_fresh(request.session, 'login_verification_time'):
+                _clear_session(request, LOGIN_SESSION_KEYS)
+                return JsonResponse({'success': False, 'message': 'Код истёк.'})
+
+            if bump_attempt(request.session, 'login_code_attempts') > MAX_CODE_ATTEMPTS:
+                _clear_session(request, LOGIN_SESSION_KEYS)
+                return JsonResponse({'success': False, 'message': 'Слишком много попыток.'})
+
+            if not secrets.compare_digest(verification_code, stored_code):
+                return JsonResponse({'success': False, 'message': 'Неверный код.'})
+
+            user = User.objects.filter(id=user_id).first()
+            if user is None:
+                _clear_session(request, LOGIN_SESSION_KEYS)
+                return JsonResponse({'success': False, 'message': 'Ошибка входа.'})
+
+            _clear_session(request, LOGIN_SESSION_KEYS)
+            auth_login(request, user)
+            return JsonResponse({'success': True, 'redirect_url': '/home/'})
+
+        # ---------------- RESEND SIGNUP CODE ----------------
+        elif action == 'resend_signup_code':
+            signup_data = request.session.get('signup_data')
+            if not signup_data:
+                return JsonResponse({'success': False, 'message': 'Сессия истекла.'})
+
+            verification_code = gen_code()
+            request.session['verification_code'] = verification_code
+            request.session['verification_time'] = datetime.now().isoformat()
+            request.session['signup_code_attempts'] = 0
+            request.session.modified = True
+
+            try:
+                send_mail(
+                    'Verify Your Email - CodeSport',
+                    f'Your new verification code is: {verification_code}\n\n'
+                    f'This code will expire in 10 minutes.',
+                    settings.DEFAULT_FROM_EMAIL,
+                    [signup_data['email']],
+                    fail_silently=False,
+                )
+            except Exception:
+                return JsonResponse({'success': False, 'message': 'Не удалось отправить письмо.'})
+
+            return JsonResponse({'success': True, 'message': 'Код отправлен.'})
+
+        # ---------------- RESEND LOGIN CODE ----------------
+        elif action == 'resend_login_code':
+            user_id = request.session.get('login_user_id')
+            if not user_id:
+                return JsonResponse({'success': False, 'message': 'Сессия истекла.'})
+
+            user = User.objects.filter(id=user_id).first()
+            if user is None:
+                _clear_session(request, LOGIN_SESSION_KEYS)
+                return JsonResponse({'success': False, 'message': 'Ошибка.'})
+
+            verification_code = gen_code()
+            request.session['login_verification_code'] = verification_code
+            request.session['login_verification_time'] = datetime.now().isoformat()
+            request.session['login_code_attempts'] = 0
+            request.session.modified = True
+
+            try:
+                send_mail(
+                    'Verify Your Login - CodeSport',
+                    f'Your new login verification code is: {verification_code}\n\n'
+                    f'This code will expire in 10 minutes.',
+                    settings.DEFAULT_FROM_EMAIL,
+                    [user.email],
+                    fail_silently=False,
+                )
+            except Exception:
+                return JsonResponse({'success': False, 'message': 'Не удалось отправить письмо.'})
+
+            return JsonResponse({'success': True, 'message': 'Код отправлен.'})
+
+        # ---------------- FORGOT PASSWORD ----------------
+        elif action == 'forgot_password':
+            email = (request.POST.get('email') or '').strip().lower()
+            user = User.objects.filter(email__iexact=email).first()
+
+            if user:
+                reset_code = gen_code()
                 request.session['reset_code'] = reset_code
                 request.session['reset_email'] = email
                 request.session['reset_time'] = datetime.now().isoformat()
-                request.session.modified = True
-
-                # Send reset email
-                send_mail(
-                    'Password Reset - CodeSport',
-                    f'Your password reset code is: {reset_code}\n\n'
-                    f'This code will expire in 10 minutes.\n\n'
-                    f'If you did not request this, please ignore this email.',
-                    settings.DEFAULT_FROM_EMAIL,
-                    [email],
-                    fail_silently=False,
-                )
-
-                return JsonResponse({
-                    'success': True,
-                    'email': email
-                })
-
-            except User.DoesNotExist:
-                return JsonResponse({
-                    'success': False,
-                    'message': 'No account found with this email.'
-                })
-            except Exception as e:
-                return JsonResponse({
-                    'success': False,
-                    'message': f'Failed to send email: {str(e)}'
-                })
-
-        elif action == 'reset_password':
-            verification_code = request.POST.get('verification_code')
-            email = request.POST.get('email')
-            new_password = request.POST.get('new_password')
-
-            stored_code = request.session.get('reset_code')
-            stored_email = request.session.get('reset_email')
-
-            if not stored_code or not stored_email:
-                return JsonResponse({
-                    'success': False,
-                    'message': 'Reset session expired. Please try again.'
-                })
-
-            if stored_email != email:
-                return JsonResponse({
-                    'success': False,
-                    'message': 'Email mismatch.'
-                })
-
-            if verification_code != stored_code:
-                return JsonResponse({
-                    'success': False,
-                    'message': 'Invalid reset code.'
-                })
-
-            try:
-                user = User.objects.get(email=email)
-                user.set_password(new_password)
-                user.save()
-
-                # Clean up session
-                request.session.pop('reset_code', None)
-                request.session.pop('reset_email', None)
-                request.session.pop('reset_time', None)
-                request.session.modified = True
-
-                return JsonResponse({
-                    'success': True,
-                    'message': 'Password reset successfully!'
-                })
-
-            except User.DoesNotExist:
-                return JsonResponse({
-                    'success': False,
-                    'message': 'User not found.'
-                })
-            except Exception as e:
-                return JsonResponse({
-                    'success': False,
-                    'message': f'Error: {str(e)}'
-                })
-
-        elif action == 'resend_reset_code':
-            email = request.POST.get('email')
-
-            if email:
-                reset_code = str(random.randint(100000, 999999))
-                request.session['reset_code'] = reset_code
-                request.session['reset_time'] = datetime.now().isoformat()
+                request.session['reset_code_attempts'] = 0
                 request.session.modified = True
 
                 try:
                     send_mail(
                         'Password Reset - CodeSport',
-                        f'Your new password reset code is: {reset_code}\n\n'
+                        f'Your password reset code is: {reset_code}\n\n'
                         f'This code will expire in 10 minutes.',
                         settings.DEFAULT_FROM_EMAIL,
                         [email],
                         fail_silently=False,
                     )
-                    return JsonResponse({'success': True, 'message': 'Code sent successfully'})
-                except Exception as e:
-                    return JsonResponse({'success': False, 'message': str(e)})
+                except Exception:
+                    _clear_session(request, RESET_SESSION_KEYS)
+                    # Всё равно отвечаем success — не палим существование email
+                    return JsonResponse({'success': True, 'email': email})
 
-            return JsonResponse({'success': False, 'message': 'Email is required'})
+            # Единый ответ независимо от существования аккаунта
+            return JsonResponse({'success': True, 'email': email})
+
+        # ---------------- RESET PASSWORD ----------------
+        elif action == 'reset_password':
+            verification_code = (request.POST.get('verification_code') or '').strip()
+            email = (request.POST.get('email') or '').strip().lower()
+            new_password = request.POST.get('new_password') or ''
+
+            stored_code = request.session.get('reset_code')
+            stored_email = request.session.get('reset_email')
+
+            if not stored_code or not stored_email:
+                return JsonResponse({'success': False, 'message': 'Сессия истекла.'})
+            if stored_email != email:
+                return JsonResponse({'success': False, 'message': 'Неверный email.'})
+            if not code_is_fresh(request.session, 'reset_time'):
+                _clear_session(request, RESET_SESSION_KEYS)
+                return JsonResponse({'success': False, 'message': 'Код истёк.'})
+            if bump_attempt(request.session, 'reset_code_attempts') > MAX_CODE_ATTEMPTS:
+                _clear_session(request, RESET_SESSION_KEYS)
+                return JsonResponse({'success': False, 'message': 'Слишком много попыток.'})
+            if not secrets.compare_digest(verification_code, stored_code):
+                return JsonResponse({'success': False, 'message': 'Неверный код.'})
+            if len(new_password) < 8:
+                return JsonResponse({'success': False, 'message': 'Пароль слишком короткий.'})
+
+            user = User.objects.filter(email__iexact=email).first()
+            if user is None:
+                return JsonResponse({'success': False, 'message': 'Ошибка.'})
+
+            user.set_password(new_password)
+            user.save()
+            _clear_session(request, RESET_SESSION_KEYS)
+            return JsonResponse({'success': True, 'message': 'Пароль обновлён.'})
+
+        # ---------------- RESEND RESET CODE ----------------
+        elif action == 'resend_reset_code':
+            email = (request.POST.get('email') or '').strip().lower()
+            stored_email = request.session.get('reset_email')
+
+            if not stored_email or stored_email != email:
+                # Не подтверждаем существование адреса
+                return JsonResponse({'success': True, 'message': 'Код отправлен.'})
+
+            reset_code = gen_code()
+            request.session['reset_code'] = reset_code
+            request.session['reset_time'] = datetime.now().isoformat()
+            request.session['reset_code_attempts'] = 0
+            request.session.modified = True
+
+            try:
+                send_mail(
+                    'Password Reset - CodeSport',
+                    f'Your new password reset code is: {reset_code}\n\n'
+                    f'This code will expire in 10 minutes.',
+                    settings.DEFAULT_FROM_EMAIL,
+                    [email],
+                    fail_silently=False,
+                )
+            except Exception:
+                return JsonResponse({'success': False, 'message': 'Не удалось отправить письмо.'})
+
+            return JsonResponse({'success': True, 'message': 'Код отправлен.'})
 
     return render(request, 'start/login.html')
 
@@ -685,6 +680,19 @@ def add_solutions(request, problem_id):
     })
 
 @login_required
+@require_POST
+def delete_solution(request, solution_id):
+    solution = get_object_or_404(Solution, id=solution_id)
+
+    # Разрешаем удалять только владельцу задачи
+    if solution.problem.author != request.user:
+        return redirect('problem_detail', problem_id=solution.problem.id)
+
+    problem_id = solution.problem.id
+    solution.delete()
+    return redirect('add_solutions', problem_id=problem_id)
+
+@login_required
 def user_problems(request):
     user_problems = Problem.objects.filter(author=request.user).order_by('-created_at')
     return render(request, 'main/user_problems.html', {'problems': user_problems})
@@ -738,11 +746,11 @@ def submission_result(request, submission_id):
     submission = get_object_or_404(Submission, id=submission_id, user=request.user)
     return render(request, 'main/submission_result.html', {'submission': submission})
 
-def run_code(code, language, test_cases):
+def run_code(code, language, test_cases, timeout=5, compile_timeout=15):
     test_cases = list(test_cases)
     results = {'passed': 0, 'details': []}
 
-    lang = language.lower()
+    lang = (language or '').lower()
     if lang in ('c++', 'cpp'):
         lang = 'cpp'
     elif lang in ('js', 'javascript'):
@@ -750,7 +758,7 @@ def run_code(code, language, test_cases):
 
     def add_detail(tc, status, output, expected=None):
         if expected is None:
-            expected = tc.expected_output.strip()
+            expected = _as_text(tc.expected_output).strip()
         results['details'].append({
             'test_case': tc.order,
             'status': status,
@@ -763,156 +771,153 @@ def run_code(code, language, test_cases):
         for tc in test_cases:
             add_detail(tc, 'compile_error', message)
 
-    def run_test(cmd, tc):
-        expected = tc.expected_output.strip()
-        try:
-            process = subprocess.run(
-                cmd,
-                input=tc.input,
-                text=True,
-                capture_output=True,
-                timeout=5,          # 1s is often too tight for compiled langs
-            )
-        except subprocess.TimeoutExpired:
+    def run_test(cmd, tc, workdir, limits):
+        expected = _as_text(tc.expected_output).strip()
+        input_data = _as_text(tc.input)
+
+        res = run_sandboxed(
+            cmd, input_data, timeout, workdir,
+            mem_mb=limits['mem_mb'],
+            fsize_mb=limits['fsize_mb'],
+            nproc=limits['nproc'],
+        )
+
+        if res.error:
+            add_detail(tc, 'error', f'Runtime Error: {res.error}', expected)
+            return
+        if res.timed_out:
             add_detail(tc, 'timeout', 'Time Limit Exceeded', expected)
             return
-        except Exception as e:
-            add_detail(tc, 'error', f'Runtime Error: {e}', expected)
-            return
 
-        output = process.stdout.strip()
-        stderr = process.stderr.strip()
+        output, stderr = res.stdout, res.stderr
 
-        if process.returncode != 0:
-            # Surface the runtime error instead of the empty stdout
-            err = stderr or output or f'Exit code {process.returncode}'
-            add_detail(tc, 'error', err, expected)
+        if res.returncode != 0:
+            if res.returncode < 0:
+                # Убит сигналом — обычно это RLIMIT_AS / RLIMIT_CPU
+                sig = -res.returncode
+                try:
+                    name = _signal.Signals(sig).name
+                except ValueError:
+                    name = f'signal {sig}'
+                if name in ('SIGKILL', 'SIGSEGV', 'SIGABRT'):
+                    msg = f'Memory Limit Exceeded / killed ({name})'
+                elif name == 'SIGXCPU':
+                    msg = 'Time Limit Exceeded (CPU)'
+                else:
+                    msg = f'Killed by {name}'
+                add_detail(tc, 'error', msg, expected)
+            else:
+                err = stderr or output or f'Exit code {res.returncode}'
+                add_detail(tc, 'error', err, expected)
         elif output == expected:
             results['passed'] += 1
             add_detail(tc, 'passed', output, expected)
         else:
             add_detail(tc, 'failed', output, expected)
 
+    def run_interpreted(suffix, cmd_prefix, limits):
+        with tempfile.TemporaryDirectory(prefix='judge_') as temp_dir:
+            src = os.path.join(temp_dir, f'solution{suffix}')
+            with open(src, 'w', encoding='utf-8') as f:
+                f.write(code)
+            os.chmod(src, 0o644)
+
+            for tc in test_cases:
+                run_test([*cmd_prefix, src], tc, temp_dir, limits)
+
     # ---------------- Python ----------------
     if lang == 'python':
-        with tempfile.NamedTemporaryFile(
-            mode='w', suffix='.py', delete=False, encoding='utf-8'
-        ) as f:
-            f.write(code)
-            temp_file = f.name
-        try:
-            for tc in test_cases:
-                run_test([sys.executable, temp_file], tc)
-        finally:
-            os.unlink(temp_file)
+        run_interpreted('.py', [sys.executable], DEFAULT_LIMITS)
 
     # ---------------- JavaScript ----------------
     elif lang == 'javascript':
-        with tempfile.NamedTemporaryFile(
-            mode='w', suffix='.js', delete=False, encoding='utf-8'
-        ) as f:
-            f.write(code)
-            temp_file = f.name
-        try:
-            for tc in test_cases:
-                run_test(['node', temp_file], tc)
-        finally:
-            os.unlink(temp_file)
+        run_interpreted('.js', ['node'], DEFAULT_LIMITS)
 
     # ---------------- C++ ----------------
     elif lang == 'cpp':
-        # Use a directory under the project, NOT /tmp, in case /tmp is noexec.
         base_dir = os.environ.get('JUDGE_TMP') or os.path.join(
             tempfile.gettempdir(), 'judge'
         )
         os.makedirs(base_dir, exist_ok=True)
-        temp_dir = tempfile.mkdtemp(dir=base_dir)
+        os.chmod(base_dir, 0o700)
 
-        src = os.path.join(temp_dir, 'solution.cpp')
-        exe = os.path.join(temp_dir, 'solution.exe' if os.name == 'nt' else 'solution')
+        with tempfile.TemporaryDirectory(dir=base_dir, prefix='judge_') as temp_dir:
+            src = os.path.join(temp_dir, 'solution.cpp')
+            exe = os.path.join(temp_dir, 'solution')
 
-        try:
             with open(src, 'w', encoding='utf-8') as f:
                 f.write(code)
+            os.chmod(src, 0o644)
 
-            # ---- Compile ----
-            try:
-                compile_proc = subprocess.run(
-                    ['g++', '-std=c++17', '-O2', src, '-o', exe],
-                    text=True, capture_output=True, timeout=15,
-                )
-            except FileNotFoundError:
-                mark_compile_error(
-                    "g++ not found. Install build-essential (Linux) or MinGW (Windows)."
-                )
+            # ---- Компиляция в песочнице ----
+            res = run_sandboxed(
+                ['g++', '-std=c++17', '-O2', '-pipe',
+                 '-fno-asm',           # опционально: чуть меньше «магии»
+                 src, '-o', exe],
+                '', compile_timeout, temp_dir,
+                mem_mb=COMPILE_LIMITS['mem_mb'],
+                fsize_mb=COMPILE_LIMITS['fsize_mb'],
+                nproc=COMPILE_LIMITS['nproc'],
+                env={'PATH': '/usr/bin:/bin'},
+            )
+            if res.error:
+                mark_compile_error(res.error)
                 return results
-            except subprocess.TimeoutExpired:
+            if res.timed_out:
                 mark_compile_error('Compilation Time Limit Exceeded')
                 return results
-            except Exception as e:
-                mark_compile_error(f'Compilation Error: {e}')
+            if res.returncode != 0:
+                msg = (res.stderr or res.stdout or 'Compilation failed').strip()
+                mark_compile_error(msg)
                 return results
 
-            if compile_proc.returncode != 0:
-                # stderr holds the real error messages
-                msg = (compile_proc.stderr or compile_proc.stdout or '').strip()
-                mark_compile_error(msg or 'Compilation failed')
-                return results
-
-            # ---- Sanity: can we actually exec the binary? ----
-            if not os.name == 'nt':
+            if os.name != 'nt':
                 os.chmod(exe, 0o755)
-                if not os.access(exe, os.X_OK):
-                    mark_compile_error(
-                        f'Compiled binary is not executable: {exe}. '
-                        f'If this is in /tmp, your filesystem may be mounted noexec.'
-                    )
-                    return results
 
-            # ---- Run each test ----
             for tc in test_cases:
-                run_test([exe], tc)
-
-        finally:
-            shutil.rmtree(temp_dir, ignore_errors=True)
+                run_test([exe], tc, temp_dir, DEFAULT_LIMITS)
 
     # ---------------- Java ----------------
     elif lang == 'java':
-        temp_dir = tempfile.mkdtemp()
-        try:
-            match = re.search(r'public\s+class\s+(\w+)', code) \
-                 or re.search(r'class\s+(\w+)', code)
+        with tempfile.TemporaryDirectory(prefix='judge_') as temp_dir:
+            match = (
+                re.search(r'public\s+(?:final\s+|abstract\s+)?class\s+(\w+)', code)
+                or re.search(r'class\s+(\w+)', code)
+            )
             class_name = match.group(1) if match else 'Main'
             src = os.path.join(temp_dir, f'{class_name}.java')
 
             with open(src, 'w', encoding='utf-8') as f:
                 f.write(code)
 
-            try:
-                compile_proc = subprocess.run(
-                    ['javac', f'{class_name}.java'],
-                    cwd=temp_dir, text=True, capture_output=True, timeout=15,
-                )
-            except FileNotFoundError:
-                mark_compile_error("javac not found. Install a JDK.")
+            res = run_sandboxed(
+                ['javac', f'{class_name}.java'],
+                '', compile_timeout, temp_dir,
+                mem_mb=COMPILE_LIMITS['mem_mb'],
+                fsize_mb=COMPILE_LIMITS['fsize_mb'],
+                nproc=COMPILE_LIMITS['nproc'],
+                env={'PATH': '/usr/bin:/bin'},
+            )
+            if res.error:
+                mark_compile_error(res.error)
                 return results
-            except subprocess.TimeoutExpired:
+            if res.timed_out:
                 mark_compile_error('Compilation Time Limit Exceeded')
                 return results
-            except Exception as e:
-                mark_compile_error(f'Compilation Error: {e}')
-                return results
-
-            if compile_proc.returncode != 0:
-                msg = (compile_proc.stderr or compile_proc.stdout or '').strip()
-                mark_compile_error(msg or 'Compilation failed')
+            if res.returncode != 0:
+                msg = (res.stderr or res.stdout or 'Compilation failed').strip()
+                mark_compile_error(msg)
                 return results
 
             for tc in test_cases:
-                run_test(['java', '-cp', temp_dir, class_name], tc)
-
-        finally:
-            shutil.rmtree(temp_dir, ignore_errors=True)
+                run_test(
+                    ['java',
+                     '-Djava.io.tmpdir=' + temp_dir,   # JVM пишет только сюда
+                     '-XX:+UseSerialGC',               # меньше потоков
+                     '-Xshare:auto',
+                     '-cp', temp_dir, class_name],
+                    tc, temp_dir, JAVA_LIMITS,
+                )
 
     else:
         raise ValueError(f'Unsupported language: {language}')

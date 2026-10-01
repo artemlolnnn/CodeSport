@@ -32,6 +32,7 @@ urlpatterns = [
     path('test-cases/<int:test_case_id>/edit/', views.edit_test_case, name='edit_test_case'),
     path('test-cases/<int:test_case_id>/delete/', views.delete_test_case, name='delete_test_case'),
     path('problems/<int:problem_id>/solutions/', views.add_solutions, name='add_solutions'),
+    path('solutions/<int:solution_id>/delete/', views.delete_solution, name='delete_solution'),
     path('problems/<int:problem_id>/', views.problem_detail, name='problem_detail'),
     path('problems/<int:problem_id>/submit/', views.submit_solution, name='submit_solution'),
     path('submission/<int:submission_id>/', views.submission_result, name='submission_result'),

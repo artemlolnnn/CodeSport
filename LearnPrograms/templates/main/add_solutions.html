@@ -1,6 +1,45 @@
 {% extends 'base.html' %}
+{% load code_extras %}
 
 {% block title %}CodeSport - Решения для {{ problem.title }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+<style>
+    .solution-code {
+        font-family: 'Roboto Mono', ui-monospace, monospace;
+        font-size: 13px;
+        line-height: 1.5;
+        max-height: 420px;
+        overflow: auto;
+        white-space: pre;
+        tab-size: 4;
+        margin: 0;
+        border-radius: 8px;
+    }
+    .solution-preview {
+        font-family: 'Roboto Mono', ui-monospace, monospace;
+        font-size: 12px;
+        white-space: pre;
+        max-width: 380px;
+        max-height: 90px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin: 0;
+        color: #555;
+    }
+    .solution-preview::after {
+        content: "";
+        position: absolute;
+        inset: auto 0 0 0;
+        height: 1.4em;
+        background: linear-gradient(transparent, #fff);
+        pointer-events: none;
+    }
+    .solution-preview-wrap { position: relative; }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="container py-4">
@@ -21,9 +60,7 @@
         {% if is_owner %}
         <div class="col-lg-5">
             <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Добавить новое решение</h5>
-                </div>
+                <div class="card-header"><h5 class="mb-0">Добавить новое решение</h5></div>
                 <div class="card-body">
                     <form method="post">
                         {% csrf_token %}
@@ -49,9 +86,7 @@
             </div>
 
             <div class="card mt-4">
-                <div class="card-header">
-                    <h5 class="mb-0">Быстрые действия</h5>
-                </div>
+                <div class="card-header"><h5 class="mb-0">Быстрые действия</h5></div>
                 <div class="card-body">
                     <a href="{% url 'add_test_cases' problem.id %}" class="btn btn-outline-primary w-100 mb-2">Управление тестовыми примерами</a>
                     <a href="{% url 'user_problems' %}" class="btn btn-outline-secondary w-100">Все мои задачи</a>
@@ -76,23 +111,23 @@
                 <div class="card-body">
                     {% if solutions %}
                     <div class="table-responsive">
-                        <table class="table table-sm">
+                        <table class="table table-sm align-middle">
                             <thead>
                                 <tr>
                                     <th>Язык</th>
-                                    <th>Предпросмотр кода</th>
+                                    <th>Предпросмотр</th>
                                     <th>Видимость</th>
-                                    {% if is_owner %}
-                                    <th>Действия</th>
-                                    {% endif %}
+                                    {% if is_owner %}<th>Действия</th>{% endif %}
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for solution in solutions %}
                                 <tr>
-                                    <td>{{ solution.get_language_display }}</td>
+                                    <td><span class="badge bg-dark">{{ solution.get_language_display }}</span></td>
                                     <td>
-                                        <pre class="mb-0"><code>{{ solution.code|truncatewords:10 }}</code></pre>
+                                        <div class="solution-preview-wrap">
+                                            <pre class="solution-preview"><code>{{ solution.code }}</code></pre>
+                                        </div>
                                     </td>
                                     <td>
                                         {% if solution.is_public %}
@@ -102,62 +137,101 @@
                                         {% endif %}
                                     </td>
                                     {% if is_owner %}
-                                    <td>
-                                        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#solutionModal{{ solution.id }}">
+                                    <td class="text-nowrap">
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-primary"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#solutionModal{{ solution.id }}">
                                             Просмотр
                                         </button>
-                                        <a href="#" class="btn btn-sm btn-outline-danger">Удалить</a>
+                                        <form method="post"
+                                              action="{% url 'delete_solution' solution.id %}"
+                                              class="d-inline"
+                                              onsubmit="return confirm('Удалить это решение?');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">Удалить</button>
+                                        </form>
                                     </td>
                                     {% endif %}
                                 </tr>
-
-                                {% if is_owner %}
-                                <div class="modal fade" id="solutionModal{{ solution.id }}" tabindex="-1">
-                                    <div class="modal-dialog modal-lg">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title">Решение на {{ solution.get_language_display }}</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <pre><code class="language-{{ solution.language }}">{{ solution.code }}</code></pre>
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                {% endif %}
                                 {% endfor %}
                             </tbody>
                         </table>
                     </div>
                     {% else %}
-                    <p class="text-muted text-center">Решения пока не добавлены.</p>
+                    <p class="text-muted text-center mb-0">Решения пока не добавлены.</p>
                     {% endif %}
                 </div>
             </div>
         </div>
     </div>
 </div>
-{% endblock %}
 
-{% block extra_css %}
-<style>
-    .code-editor {
-        font-family: 'Roboto Mono', monospace;
-        font-size: 14px;
-    }
-</style>
+{# --- Модалки вынесены из таблицы --- #}
+{% if is_owner %}
+{% for solution in solutions %}
+<div class="modal fade" id="solutionModal{{ solution.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    Решение на {{ solution.get_language_display }}
+                    {% if solution.is_public %}
+                    <span class="badge bg-success ms-2">Публичное</span>
+                    {% else %}
+                    <span class="badge bg-secondary ms-2">Приватное</span>
+                    {% endif %}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <pre class="solution-code"><code class="language-{{ solution.language|prism_lang }}">{{ solution.code }}</code></pre>
+            </div>
+            <div class="modal-footer">
+                <button type="button"
+                        class="btn btn-outline-secondary btn-sm"
+                        onclick="copySolution(this, 'solution-code-{{ solution.id }}')">
+                    Копировать
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endif %}
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-clike.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-c.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-cpp.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-java.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"></script>
+
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll('pre code').forEach(function(codeBlock) {
-            codeBlock.classList.add('p-3', 'bg-light', 'rounded');
+    // Подсветка при открытии модалки (Prism не всегда видит скрытые элементы)
+    document.querySelectorAll('.modal').forEach(function (modal) {
+        modal.addEventListener('shown.bs.modal', function () {
+            modal.querySelectorAll('pre code').forEach(function (block) {
+                if (!block.dataset.highlighted) {
+                    Prism.highlightElement(block);
+                    block.dataset.highlighted = '1';
+                }
+            });
         });
     });
+
+    function copySolution(btn, id) {
+        const block = document.getElementById(id);
+        if (!block) return;
+        navigator.clipboard.writeText(block.innerText).then(function () {
+            const old = btn.textContent;
+            btn.textContent = 'Скопировано!';
+            setTimeout(function () { btn.textContent = old; }, 1200);
+        });
+    }
 </script>
 {% endblock %}
