@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Problem - Admin Panel</title>
+    <title>Редактировать задачу - Админ-панель</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -98,7 +98,7 @@
     </style>
 </head>
 <body>
-    <!-- Navigation Bar -->
+    <!-- Навигационная панель -->
     <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
         <div class="container">
             <a class="navbar-brand" href="{% url 'home' %}">
@@ -111,20 +111,20 @@
 
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
-                    <li class="nav-item"><a class="nav-link" href="{% url 'home' %}">Home</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'problems' %}">Problems</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'contests' %}">Contests</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'leaderboard' %}">Leaderboard</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'about' %}">About</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'home' %}">Главная</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'problems' %}">Задачи</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'contests' %}">Соревнования</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'leaderboard' %}">Таблица лидеров</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'about' %}">О нас</a></li>
                     {% if user.username == 'CodeSupportOfficial' %}
-                    <li class="nav-item"><a class="nav-link active" href="{% url 'admin_panel' %}">Admin Panel</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="{% url 'admin_panel' %}">Админ-панель</a></li>
                     {% endif %}
                 </ul>
 
                 <ul class="navbar-nav">
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'logout' %}">
-                            <i class="fas fa-sign-out-alt me-1"></i>Logout
+                            <i class="fas fa-sign-out-alt me-1"></i>Выход
                         </a>
                     </li>
                 </ul>
@@ -132,12 +132,12 @@
         </div>
     </nav>
 
-    <!-- Main Content -->
+    <!-- Основное содержимое -->
     <div class="container">
         <div class="edit-container">
             <div class="edit-header">
                 <h2 class="mb-0">
-                    <i class="fas fa-edit me-2"></i>Edit Problem
+                    <i class="fas fa-edit me-2"></i>Редактировать задачу
                 </h2>
             </div>
 
@@ -155,25 +155,25 @@
                     {% csrf_token %}
 
                     <div class="form-group">
-                        <label for="id_title">Title</label>
+                        <label for="id_title">Название</label>
                         {{ form.title }}
                     </div>
 
                     <div class="form-group">
-                        <label for="id_description">Description</label>
+                        <label for="id_description">Описание</label>
                         {{ form.description }}
                     </div>
 
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="id_difficulty">Difficulty</label>
+                                <label for="id_difficulty">Сложность</label>
                                 {{ form.difficulty }}
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="id_time_limit">Time Limit (seconds)</label>
+                                <label for="id_time_limit">Ограничение по времени (секунды)</label>
                                 {{ form.time_limit }}
                             </div>
                         </div>
@@ -182,23 +182,23 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="id_memory_limit">Memory Limit (MB)</label>
+                                <label for="id_memory_limit">Ограничение по памяти (МБ)</label>
                                 {{ form.memory_limit }}
                             </div>
                         </div>
                     </div>
 
                     <div class="form-group">
-                        <label for="id_template_code">Template Code</label>
+                        <label for="id_template_code">Шаблонный код</label>
                         {{ form.template_code }}
                     </div>
 
                     <div class="d-flex gap-2 mt-4">
                         <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save me-1"></i>Update Problem
+                            <i class="fas fa-save me-1"></i>Обновить задачу
                         </button>
                         <a href="{% url 'admin_panel' %}" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left me-1"></i>Cancel
+                            <i class="fas fa-arrow-left me-1"></i>Отмена
                         </a>
                     </div>
                 </form>

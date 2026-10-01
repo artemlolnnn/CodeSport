@@ -1,14 +1,14 @@
 <!-- templates/main/user_problems.html -->
 {% extends 'base.html' %}
 
-{% block title %}CodeSport - My Problems{% endblock %}
+{% block title %}CodeSport - Мои задачи{% endblock %}
 
 {% block content %}
 <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>My Problems</h1>
+        <h1>Мои задачи</h1>
         <a href="{% url 'create_problem' %}" class="btn btn-primary">
-            <i class="fas fa-plus me-2"></i>Create New Problem
+            <i class="fas fa-plus me-2"></i>Создать новую задачу
         </a>
     </div>
 
@@ -20,10 +20,10 @@
                     <thead class="table-dark">
                         <tr>
                             <th scope="col" style="width: 5%;">#</th>
-                            <th scope="col" style="width: 40%;">Problem</th>
-                            <th scope="col" style="width: 15%;">Difficulty</th>
-                            <th scope="col" style="width: 15%;">Submissions</th>
-                            <th scope="col" style="width: 25%;">Actions</th>
+                            <th scope="col" style="width: 40%;">Задача</th>
+                            <th scope="col" style="width: 15%;">Сложность</th>
+                            <th scope="col" style="width: 15%;">Посылки</th>
+                            <th scope="col" style="width: 25%;">Действия</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -37,19 +37,19 @@
                             </td>
                             <td>
                                 {% if problem.difficulty == 'easy' %}
-                                <span class="badge bg-success">Easy</span>
+                                <span class="badge bg-success">Лёгкая</span>
                                 {% elif problem.difficulty == 'medium' %}
-                                <span class="badge bg-warning">Medium</span>
+                                <span class="badge bg-warning">Средняя</span>
                                 {% else %}
-                                <span class="badge bg-danger">Hard</span>
+                                <span class="badge bg-danger">Сложная</span>
                                 {% endif %}
                             </td>
                             <td>
-                                <span class="text-muted">{{ problem.submission_set.count }} submissions</span>
+                                <span class="text-muted">{{ problem.submission_set.count }} посылок</span>
                             </td>
                             <td>
-                                <a href="{% url 'problem_detail' problem.id %}" class="btn btn-sm btn-outline-primary me-1">View</a>
-                                <a href="{% url 'add_solutions' problem.id %}" class="btn btn-sm btn-success">Add Solutions</a>
+                                <a href="{% url 'problem_detail' problem.id %}" class="btn btn-sm btn-outline-primary me-1">Просмотр</a>
+                                <a href="{% url 'add_solutions' problem.id %}" class="btn btn-sm btn-success">Добавить решения</a>
                             </td>
                         </tr>
                         {% endfor %}
@@ -62,9 +62,9 @@
     <div class="card">
         <div class="card-body text-center py-5">
             <i class="fas fa-file-code fa-3x text-muted mb-3"></i>
-            <h4>You haven't created any problems yet</h4>
-            <p class="text-muted">Create your first problem to start adding solutions</p>
-            <a href="{% url 'create_problem' %}" class="btn btn-primary">Create Your First Problem</a>
+            <h4>Вы ещё не создали ни одной задачи</h4>
+            <p class="text-muted">Создайте свою первую задачу, чтобы начать добавлять решения</p>
+            <a href="{% url 'create_problem' %}" class="btn btn-primary">Создайте свою первую задачу</a>
         </div>
     </div>
     {% endif %}

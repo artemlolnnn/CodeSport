@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}CodeSport - Logged Out{% endblock %}
+{% block title %}CodeSport - Выход выполнен{% endblock %}
 
 {% block content %}
 <div class="container py-5">
@@ -9,15 +9,15 @@
             <div class="card shadow">
                 <div class="card-body p-5 text-center">
                     <i class="fas fa-check-circle fa-4x text-success mb-4"></i>
-                    <h2>Successfully Logged Out</h2>
-                    <p class="text-muted mb-4">You have been successfully logged out of your account.</p>
-                    
+                    <h2>Вы успешно вышли</h2>
+                    <p class="text-muted mb-4">Вы успешно вышли из своей учётной записи.</p>
+
                     <div class="d-grid gap-2">
                         <a href="{% url 'login' %}" class="btn btn-primary btn-lg">
-                            <i class="fas fa-sign-in-alt me-2"></i>Login Again
+                            <i class="fas fa-sign-in-alt me-2"></i>Войти снова
                         </a>
                         <a href="{% url 'home' %}" class="btn btn-outline-secondary btn-lg">
-                            <i class="fas fa-home me-2"></i>Return to Home
+                            <i class="fas fa-home me-2"></i>Вернуться на главную
                         </a>
                     </div>
                 </div>

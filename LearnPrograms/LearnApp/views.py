@@ -11,12 +11,12 @@ from django.views.decorators.http import require_POST
 
 from .models import *
 from .forms import *
-import subprocess
-import tempfile
-import os
 import random
 import json
 from datetime import datetime, timedelta
+import os, re, shutil, subprocess, sys, tempfile, logging
+
+logger = logging.getLogger(__name__)
 
 
 def login_view(request):
@@ -739,59 +739,184 @@ def submission_result(request, submission_id):
     return render(request, 'main/submission_result.html', {'submission': submission})
 
 def run_code(code, language, test_cases):
+    test_cases = list(test_cases)
     results = {'passed': 0, 'details': []}
-    
-    if language == 'python':
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+
+    lang = language.lower()
+    if lang in ('c++', 'cpp'):
+        lang = 'cpp'
+    elif lang in ('js', 'javascript'):
+        lang = 'javascript'
+
+    def add_detail(tc, status, output, expected=None):
+        if expected is None:
+            expected = tc.expected_output.strip()
+        results['details'].append({
+            'test_case': tc.order,
+            'status': status,
+            'output': output,
+            'expected': expected,
+        })
+
+    def mark_compile_error(message):
+        logger.error("Compile error:\n%s", message)
+        for tc in test_cases:
+            add_detail(tc, 'compile_error', message)
+
+    def run_test(cmd, tc):
+        expected = tc.expected_output.strip()
+        try:
+            process = subprocess.run(
+                cmd,
+                input=tc.input,
+                text=True,
+                capture_output=True,
+                timeout=5,          # 1s is often too tight for compiled langs
+            )
+        except subprocess.TimeoutExpired:
+            add_detail(tc, 'timeout', 'Time Limit Exceeded', expected)
+            return
+        except Exception as e:
+            add_detail(tc, 'error', f'Runtime Error: {e}', expected)
+            return
+
+        output = process.stdout.strip()
+        stderr = process.stderr.strip()
+
+        if process.returncode != 0:
+            # Surface the runtime error instead of the empty stdout
+            err = stderr or output or f'Exit code {process.returncode}'
+            add_detail(tc, 'error', err, expected)
+        elif output == expected:
+            results['passed'] += 1
+            add_detail(tc, 'passed', output, expected)
+        else:
+            add_detail(tc, 'failed', output, expected)
+
+    # ---------------- Python ----------------
+    if lang == 'python':
+        with tempfile.NamedTemporaryFile(
+            mode='w', suffix='.py', delete=False, encoding='utf-8'
+        ) as f:
             f.write(code)
             temp_file = f.name
-        
         try:
-            for test_case in test_cases:
-                process = subprocess.run(
-                    ['python', temp_file],
-                    input=test_case.input,
-                    text=True,
-                    capture_output=True,
-                    timeout=1
-                )
-                
-                output = process.stdout.strip()
-                expected = test_case.expected_output.strip()
-                
-                if output == expected:
-                    results['passed'] += 1
-                    results['details'].append({
-                        'test_case': test_case.order,
-                        'status': 'passed',
-                        'output': output,
-                        'expected': expected
-                    })
-                else:
-                    results['details'].append({
-                        'test_case': test_case.order,
-                        'status': 'failed',
-                        'output': output,
-                        'expected': expected
-                    })
-                
-        except subprocess.TimeoutExpired:
-            results['details'].append({
-                'test_case': test_case.order,
-                'status': 'timeout',
-                'output': 'Time Limit Exceeded',
-                'expected': test_case.expected_output.strip()
-            })
-        except Exception as e:
-            results['details'].append({
-                'test_case': test_case.order,
-                'status': 'error',
-                'output': f'Runtime Error: {str(e)}',
-                'expected': test_case.expected_output.strip()
-            })
+            for tc in test_cases:
+                run_test([sys.executable, temp_file], tc)
         finally:
             os.unlink(temp_file)
-    
+
+    # ---------------- JavaScript ----------------
+    elif lang == 'javascript':
+        with tempfile.NamedTemporaryFile(
+            mode='w', suffix='.js', delete=False, encoding='utf-8'
+        ) as f:
+            f.write(code)
+            temp_file = f.name
+        try:
+            for tc in test_cases:
+                run_test(['node', temp_file], tc)
+        finally:
+            os.unlink(temp_file)
+
+    # ---------------- C++ ----------------
+    elif lang == 'cpp':
+        # Use a directory under the project, NOT /tmp, in case /tmp is noexec.
+        base_dir = os.environ.get('JUDGE_TMP') or os.path.join(
+            tempfile.gettempdir(), 'judge'
+        )
+        os.makedirs(base_dir, exist_ok=True)
+        temp_dir = tempfile.mkdtemp(dir=base_dir)
+
+        src = os.path.join(temp_dir, 'solution.cpp')
+        exe = os.path.join(temp_dir, 'solution.exe' if os.name == 'nt' else 'solution')
+
+        try:
+            with open(src, 'w', encoding='utf-8') as f:
+                f.write(code)
+
+            # ---- Compile ----
+            try:
+                compile_proc = subprocess.run(
+                    ['g++', '-std=c++17', '-O2', src, '-o', exe],
+                    text=True, capture_output=True, timeout=15,
+                )
+            except FileNotFoundError:
+                mark_compile_error(
+                    "g++ not found. Install build-essential (Linux) or MinGW (Windows)."
+                )
+                return results
+            except subprocess.TimeoutExpired:
+                mark_compile_error('Compilation Time Limit Exceeded')
+                return results
+            except Exception as e:
+                mark_compile_error(f'Compilation Error: {e}')
+                return results
+
+            if compile_proc.returncode != 0:
+                # stderr holds the real error messages
+                msg = (compile_proc.stderr or compile_proc.stdout or '').strip()
+                mark_compile_error(msg or 'Compilation failed')
+                return results
+
+            # ---- Sanity: can we actually exec the binary? ----
+            if not os.name == 'nt':
+                os.chmod(exe, 0o755)
+                if not os.access(exe, os.X_OK):
+                    mark_compile_error(
+                        f'Compiled binary is not executable: {exe}. '
+                        f'If this is in /tmp, your filesystem may be mounted noexec.'
+                    )
+                    return results
+
+            # ---- Run each test ----
+            for tc in test_cases:
+                run_test([exe], tc)
+
+        finally:
+            shutil.rmtree(temp_dir, ignore_errors=True)
+
+    # ---------------- Java ----------------
+    elif lang == 'java':
+        temp_dir = tempfile.mkdtemp()
+        try:
+            match = re.search(r'public\s+class\s+(\w+)', code) \
+                 or re.search(r'class\s+(\w+)', code)
+            class_name = match.group(1) if match else 'Main'
+            src = os.path.join(temp_dir, f'{class_name}.java')
+
+            with open(src, 'w', encoding='utf-8') as f:
+                f.write(code)
+
+            try:
+                compile_proc = subprocess.run(
+                    ['javac', f'{class_name}.java'],
+                    cwd=temp_dir, text=True, capture_output=True, timeout=15,
+                )
+            except FileNotFoundError:
+                mark_compile_error("javac not found. Install a JDK.")
+                return results
+            except subprocess.TimeoutExpired:
+                mark_compile_error('Compilation Time Limit Exceeded')
+                return results
+            except Exception as e:
+                mark_compile_error(f'Compilation Error: {e}')
+                return results
+
+            if compile_proc.returncode != 0:
+                msg = (compile_proc.stderr or compile_proc.stdout or '').strip()
+                mark_compile_error(msg or 'Compilation failed')
+                return results
+
+            for tc in test_cases:
+                run_test(['java', '-cp', temp_dir, class_name], tc)
+
+        finally:
+            shutil.rmtree(temp_dir, ignore_errors=True)
+
+    else:
+        raise ValueError(f'Unsupported language: {language}')
+
     return results
 
 def contests(request):

@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login & Sign Up - Email Verification</title>
+    <title>Вход и Регистрация - Подтверждение Email</title>
     <style>
         * {
             margin: 0;
@@ -189,10 +189,10 @@
 <body>
     <div class="container">
         <div class="form-container" id="formContainer">
-            <!-- Login Section -->
+            <!-- Секция входа -->
             <div class="login-container">
-                <h2>Login to Your Account</h2>
-                <p class="subtitle">Enter your credentials to continue</p>
+                <h2>Вход в аккаунт</h2>
+                <p class="subtitle">Введите свои данные для продолжения</p>
 
                 {% if messages %}
                     {% for message in messages %}
@@ -206,27 +206,27 @@
                     {% csrf_token %}
                     <input type="hidden" name="action" value="login">
                     <div class="form-control">
-                        <label for="login-username">Username or Email</label>
-                        <input type="text" id="login-username" name="username" placeholder="Enter username or email" required>
+                        <label for="login-username">Имя пользователя или Email</label>
+                        <input type="text" id="login-username" name="username" placeholder="Введите имя пользователя или email" required>
                     </div>
                     <div class="form-control">
-                        <label for="login-password">Password</label>
-                        <input type="password" id="login-password" name="password" placeholder="Enter your password" required>
+                        <label for="login-password">Пароль</label>
+                        <input type="password" id="login-password" name="password" placeholder="Введите пароль" required>
                     </div>
-                    <button type="submit">Login</button>
+                    <button type="submit">Войти</button>
                 </form>
 
-                <span class="forgot-password-link" onclick="showForgotPassword()">Forgot Password?</span>
+                <span class="forgot-password-link" onclick="showForgotPassword()">Забыли пароль?</span>
 
                 <div class="toggle-container">
-                    <p>Don't have an account? <span class="toggle" onclick="showSignup()">Sign Up</span></p>
+                    <p>Нет аккаунта? <span class="toggle" onclick="showSignup()">Зарегистрироваться</span></p>
                 </div>
             </div>
 
-            <!-- Sign Up Section -->
+            <!-- Секция регистрации -->
             <div class="signup-container">
-                <h2>Create Your Account</h2>
-                <p class="subtitle">We'll send a verification code to your email</p>
+                <h2>Создать аккаунт</h2>
+                <p class="subtitle">Мы отправим код подтверждения на вашу почту</p>
 
                 {% if messages %}
                     {% for message in messages %}
@@ -240,33 +240,33 @@
                     {% csrf_token %}
                     <input type="hidden" name="action" value="signup">
                     <div class="form-control">
-                        <label for="signup-username">Username</label>
-                        <input type="text" id="signup-username" name="username" placeholder="Choose a username" required>
+                        <label for="signup-username">Имя пользователя</label>
+                        <input type="text" id="signup-username" name="username" placeholder="Выберите имя пользователя" required>
                     </div>
                     <div class="form-control">
                         <label for="signup-email">Email</label>
-                        <input type="email" id="signup-email" name="email" placeholder="Enter your email" required>
+                        <input type="email" id="signup-email" name="email" placeholder="Введите email" required>
                     </div>
                     <div class="form-control">
-                        <label for="signup-password">Password</label>
-                        <input type="password" id="signup-password" name="password" placeholder="Create a password (min 8 characters)" required>
+                        <label for="signup-password">Пароль</label>
+                        <input type="password" id="signup-password" name="password" placeholder="Создайте пароль (минимум 8 символов)" required>
                     </div>
                     <div class="form-control">
-                        <label for="signup-confirm">Confirm Password</label>
-                        <input type="password" id="signup-confirm" name="confirm_password" placeholder="Confirm your password" required>
+                        <label for="signup-confirm">Подтвердите пароль</label>
+                        <input type="password" id="signup-confirm" name="confirm_password" placeholder="Подтвердите пароль" required>
                     </div>
-                    <button type="submit">Send Verification Code</button>
+                    <button type="submit">Отправить код подтверждения</button>
                 </form>
                 <div class="toggle-container">
-                    <p>Already have an account? <span class="toggle" onclick="showLogin()">Login</span></p>
+                    <p>Уже есть аккаунт? <span class="toggle" onclick="showLogin()">Войти</span></p>
                 </div>
             </div>
 
-            <!-- Sign Up Email Verification Section -->
+            <!-- Секция подтверждения email при регистрации -->
             <div class="verify-signup-container">
-                <h2>Verify Your Email</h2>
+                <h2>Подтвердите email</h2>
                 <p class="subtitle">
-                    We sent a 6-digit code to<br>
+                    Мы отправили 6-значный код на<br>
                     <strong id="signupVerificationEmail"></strong>
                 </p>
 
@@ -277,7 +277,7 @@
                     <input type="hidden" name="username" id="signupVerifyUsername" value="">
                     <input type="hidden" name="password" id="signupVerifyPassword" value="">
                     <div class="form-control">
-                        <label for="signup-verification-code">Verification Code</label>
+                        <label for="signup-verification-code">Код подтверждения</label>
                         <input type="text"
                                id="signup-verification-code"
                                name="verification_code"
@@ -287,25 +287,25 @@
                                pattern="[0-9]{6}"
                                required>
                     </div>
-                    <button type="submit">Verify & Create Account</button>
+                    <button type="submit">Подтвердить и создать аккаунт</button>
                 </form>
 
                 <div class="timer" id="signupTimer"></div>
 
                 <button class="resend-button" id="signupResendButton" onclick="resendSignupCode()" disabled>
-                    Resend Code
+                    Отправить код повторно
                 </button>
 
                 <div class="toggle-container">
-                    <p><span class="back-link" onclick="showSignup()">← Back to Sign Up</span></p>
+                    <p><span class="back-link" onclick="showSignup()">← Назад к регистрации</span></p>
                 </div>
             </div>
 
-            <!-- Login Email Verification Section -->
+            <!-- Секция подтверждения входа -->
             <div class="verify-login-container">
-                <h2>Verify Login</h2>
+                <h2>Подтверждение входа</h2>
                 <p class="subtitle">
-                    We sent a 6-digit code to<br>
+                    Мы отправили 6-значный код на<br>
                     <strong id="loginVerificationEmail"></strong>
                 </p>
 
@@ -315,7 +315,7 @@
                     <input type="hidden" name="username" id="loginVerifyUsername" value="">
                     <input type="hidden" name="password" id="loginVerifyPassword" value="">
                     <div class="form-control">
-                        <label for="login-verification-code">Verification Code</label>
+                        <label for="login-verification-code">Код подтверждения</label>
                         <input type="text"
                                id="login-verification-code"
                                name="verification_code"
@@ -325,45 +325,45 @@
                                pattern="[0-9]{6}"
                                required>
                     </div>
-                    <button type="submit">Verify & Login</button>
+                    <button type="submit">Подтвердить и войти</button>
                 </form>
 
                 <div class="timer" id="loginTimer"></div>
 
                 <button class="resend-button" id="loginResendButton" onclick="resendLoginCode()" disabled>
-                    Resend Code
+                    Отправить код повторно
                 </button>
 
                 <div class="toggle-container">
-                    <p><span class="back-link" onclick="showLogin()">← Back to Login</span></p>
+                    <p><span class="back-link" onclick="showLogin()">← Назад к входу</span></p>
                 </div>
             </div>
 
-            <!-- Forgot Password Section -->
+            <!-- Секция забыли пароль -->
             <div class="forgot-password-container">
-                <h2>Forgot Password</h2>
-                <p class="subtitle">Enter your email to receive a reset code</p>
+                <h2>Забыли пароль?</h2>
+                <p class="subtitle">Введите email, чтобы получить код сброса</p>
 
                 <form method="POST" action="{% url 'login' %}" id="forgotPasswordForm">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="forgot_password">
                     <div class="form-control">
                         <label for="forgot-email">Email</label>
-                        <input type="email" id="forgot-email" name="email" placeholder="Enter your email" required>
+                        <input type="email" id="forgot-email" name="email" placeholder="Введите email" required>
                     </div>
-                    <button type="submit">Send Reset Code</button>
+                    <button type="submit">Отправить код сброса</button>
                 </form>
 
                 <div class="toggle-container">
-                    <p><span class="back-link" onclick="showLogin()">← Back to Login</span></p>
+                    <p><span class="back-link" onclick="showLogin()">← Назад к входу</span></p>
                 </div>
             </div>
 
-            <!-- Reset Password Section -->
+            <!-- Секция сброса пароля -->
             <div class="reset-password-container">
-                <h2>Reset Password</h2>
+                <h2>Сброс пароля</h2>
                 <p class="subtitle">
-                    Enter the code sent to<br>
+                    Введите код, отправленный на<br>
                     <strong id="resetEmail"></strong>
                 </p>
 
@@ -372,7 +372,7 @@
                     <input type="hidden" name="action" value="reset_password">
                     <input type="hidden" name="email" id="resetPasswordEmail" value="">
                     <div class="form-control">
-                        <label for="reset-code">Verification Code</label>
+                        <label for="reset-code">Код подтверждения</label>
                         <input type="text"
                                id="reset-code"
                                name="verification_code"
@@ -383,24 +383,24 @@
                                required>
                     </div>
                     <div class="form-control">
-                        <label for="new-password">New Password</label>
-                        <input type="password" id="new-password" name="new_password" placeholder="Enter new password" required>
+                        <label for="new-password">Новый пароль</label>
+                        <input type="password" id="new-password" name="new_password" placeholder="Введите новый пароль" required>
                     </div>
                     <div class="form-control">
-                        <label for="confirm-new-password">Confirm New Password</label>
-                        <input type="password" id="confirm-new-password" name="confirm_new_password" placeholder="Confirm new password" required>
+                        <label for="confirm-new-password">Подтвердите новый пароль</label>
+                        <input type="password" id="confirm-new-password" name="confirm_new_password" placeholder="Подтвердите новый пароль" required>
                     </div>
-                    <button type="submit">Reset Password</button>
+                    <button type="submit">Сбросить пароль</button>
                 </form>
 
                 <div class="timer" id="resetTimer"></div>
 
                 <button class="resend-button" id="resetResendButton" onclick="resendResetCode()" disabled>
-                    Resend Code
+                    Отправить код повторно
                 </button>
 
                 <div class="toggle-container">
-                    <p><span class="back-link" onclick="showLogin()">← Back to Login</span></p>
+                    <p><span class="back-link" onclick="showLogin()">← Назад к входу</span></p>
                 </div>
             </div>
         </div>
@@ -483,7 +483,7 @@
     function updateSignupTimerDisplay() {
         if (signupTimerSeconds > 0) {
             document.getElementById('signupTimer').textContent =
-                `Resend code in ${signupTimerSeconds} seconds`;
+                `Отправить код повторно через ${signupTimerSeconds} секунд`;
         }
     }
 
@@ -508,7 +508,7 @@
     function updateLoginTimerDisplay() {
         if (loginTimerSeconds > 0) {
             document.getElementById('loginTimer').textContent =
-                `Resend code in ${loginTimerSeconds} seconds`;
+                `Отправить код повторно через ${loginTimerSeconds} секунд`;
         }
     }
 
@@ -533,7 +533,7 @@
     function updateResetTimerDisplay() {
         if (resetTimerSeconds > 0) {
             document.getElementById('resetTimer').textContent =
-                `Resend code in ${resetTimerSeconds} seconds`;
+                `Отправить код повторно через ${resetTimerSeconds} секунд`;
         }
     }
 
@@ -552,14 +552,14 @@
         .then(data => {
             if (data.success) {
                 startSignupTimer();
-                alert('New verification code sent to your email');
+                alert('Новый код подтверждения отправлен на вашу почту');
             } else {
-                alert(data.message || 'Failed to resend code');
+                alert(data.message || 'Не удалось отправить код повторно');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('An error occurred. Please try again.');
+            alert('Произошла ошибка. Пожалуйста, попробуйте снова.');
         });
     }
 
@@ -578,14 +578,14 @@
         .then(data => {
             if (data.success) {
                 startLoginTimer();
-                alert('New verification code sent to your email');
+                alert('Новый код подтверждения отправлен на вашу почту');
             } else {
-                alert(data.message || 'Failed to resend code');
+                alert(data.message || 'Не удалось отправить код повторно');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('An error occurred. Please try again.');
+            alert('Произошла ошибка. Пожалуйста, попробуйте снова.');
         });
     }
 
@@ -604,18 +604,18 @@
         .then(data => {
             if (data.success) {
                 startResetTimer();
-                alert('New reset code sent to your email');
+                alert('Новый код сброса отправлен на вашу почту');
             } else {
-                alert(data.message || 'Failed to resend code');
+                alert(data.message || 'Не удалось отправить код повторно');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('An error occurred. Please try again.');
+            alert('Произошла ошибка. Пожалуйста, попробуйте снова.');
         });
     }
 
-    // Auto-focus and format verification code inputs
+    // Автофокус и форматирование полей ввода кода подтверждения
     document.addEventListener('DOMContentLoaded', function() {
         const codeInputs = document.querySelectorAll('.verification-code-input');
         codeInputs.forEach(input => {
@@ -624,7 +624,7 @@
             });
         });
 
-        // Handle signup form with AJAX
+        // Обработка формы регистрации через AJAX
         document.getElementById('signupForm')?.addEventListener('submit', function(e) {
             e.preventDefault();
 
@@ -632,12 +632,12 @@
             const confirmPassword = document.getElementById('signup-confirm').value;
 
             if (password !== confirmPassword) {
-                alert('Passwords do not match!');
+                alert('Пароли не совпадают!');
                 return;
             }
 
             if (password.length < 8) {
-                alert('Password must be at least 8 characters long!');
+                alert('Пароль должен содержать минимум 8 символов!');
                 return;
             }
 
@@ -659,16 +659,16 @@
                         data.password
                     );
                 } else {
-                    alert(data.message || 'Failed to send verification code');
+                    alert(data.message || 'Не удалось отправить код подтверждения');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('An error occurred. Please try again.');
+                alert('Произошла ошибка. Пожалуйста, попробуйте снова.');
             });
         });
 
-        // Handle login form with AJAX
+        // Обработка формы входа через AJAX
         document.getElementById('loginForm')?.addEventListener('submit', function(e) {
             e.preventDefault();
 
@@ -692,16 +692,16 @@
                 } else if (data.success) {
                     window.location.href = data.redirect_url || '/home/';
                 } else {
-                    alert(data.message || 'Login failed');
+                    alert(data.message || 'Ошибка входа');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('An error occurred. Please try again.');
+                alert('Произошла ошибка. Пожалуйста, попробуйте снова.');
             });
         });
 
-        // Handle signup verification form with AJAX
+        // Обработка формы подтверждения регистрации через AJAX
         document.getElementById('signupVerificationForm')?.addEventListener('submit', function(e) {
             e.preventDefault();
 
@@ -719,16 +719,16 @@
                 if (data.success) {
                     window.location.href = data.redirect_url || '/home/';
                 } else {
-                    alert(data.message || 'Verification failed');
+                    alert(data.message || 'Ошибка подтверждения');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('An error occurred. Please try again.');
+                alert('Произошла ошибка. Пожалуйста, попробуйте снова.');
             });
         });
 
-        // Handle login verification form with AJAX
+        // Обработка формы подтверждения входа через AJAX
         document.getElementById('loginVerificationForm')?.addEventListener('submit', function(e) {
             e.preventDefault();
 
@@ -746,16 +746,16 @@
                 if (data.success) {
                     window.location.href = data.redirect_url || '/home/';
                 } else {
-                    alert(data.message || 'Verification failed');
+                    alert(data.message || 'Ошибка подтверждения');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('An error occurred. Please try again.');
+                alert('Произошла ошибка. Пожалуйста, попробуйте снова.');
             });
         });
 
-        // Handle forgot password form with AJAX
+        // Обработка формы забыли пароль через AJAX
         document.getElementById('forgotPasswordForm')?.addEventListener('submit', function(e) {
             e.preventDefault();
 
@@ -773,16 +773,16 @@
                 if (data.success) {
                     showResetPassword(data.email);
                 } else {
-                    alert(data.message || 'Failed to send reset code');
+                    alert(data.message || 'Не удалось отправить код сброса');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('An error occurred. Please try again.');
+                alert('Произошла ошибка. Пожалуйста, попробуйте снова.');
             });
         });
 
-        // Handle reset password form with AJAX
+        // Обработка формы сброса пароля через AJAX
         document.getElementById('resetPasswordForm')?.addEventListener('submit', function(e) {
             e.preventDefault();
 
@@ -790,12 +790,12 @@
             const confirmNewPassword = document.getElementById('confirm-new-password').value;
 
             if (newPassword !== confirmNewPassword) {
-                alert('Passwords do not match!');
+                alert('Пароли не совпадают!');
                 return;
             }
 
             if (newPassword.length < 8) {
-                alert('Password must be at least 8 characters long!');
+                alert('Пароль должен содержать минимум 8 символов!');
                 return;
             }
 
@@ -811,15 +811,15 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    alert('Password reset successfully! Please login with your new password.');
+                    alert('Пароль успешно сброшен! Пожалуйста, войдите с новым паролем.');
                     showLogin();
                 } else {
-                    alert(data.message || 'Failed to reset password');
+                    alert(data.message || 'Не удалось сбросить пароль');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('An error occurred. Please try again.');
+                alert('Произошла ошибка. Пожалуйста, попробуйте снова.');
             });
         });
     });

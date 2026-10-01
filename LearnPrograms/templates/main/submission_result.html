@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Submission Result - CodeSport{% endblock %}</title>
+    <title>{% block title %}Результат посылки - CodeSport{% endblock %}</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -175,7 +175,7 @@
 </head>
 <body>
 
-    <!-- Minimal Navigation Bar (consistent with base) -->
+    <!-- Минимальная навигационная панель (совместима с base) -->
     <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
         <div class="container">
             <a class="navbar-brand" href="{% url 'home' %}">
@@ -188,11 +188,11 @@
 
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
-                    <li class="nav-item"><a class="nav-link" href="{% url 'home' %}">Home</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'problems' %}">Problems</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'contests' %}">Contests</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'leaderboard' %}">Leaderboard</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'about' %}">About</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'home' %}">Главная</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'problems' %}">Задачи</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'contests' %}">Соревнования</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'leaderboard' %}">Таблица лидеров</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'about' %}">О нас</a></li>
                 </ul>
 
                 <ul class="navbar-nav">
@@ -202,55 +202,55 @@
                             <i class="fas fa-user-circle me-1"></i> {{ user.username }}
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{% url 'profile' %}">Profile</a></li>
-                            <li><a class="dropdown-item" href="{% url 'submissions' %}">Submissions</a></li>
+                            <li><a class="dropdown-item" href="{% url 'profile' %}">Профиль</a></li>
+                            <li><a class="dropdown-item" href="{% url 'submissions' %}">Посылки</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{% url 'user_problems' %}">My Problems</a></li>
-                            <li><a class="dropdown-item" href="{% url 'logout' %}">Logout</a></li>
+                            <li><a class="dropdown-item" href="{% url 'user_problems' %}">Мои задачи</a></li>
+                            <li><a class="dropdown-item" href="{% url 'logout' %}">Выход</a></li>
                         </ul>
                     </li>
                     {% else %}
-                    <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Login</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Register</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Вход</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Регистрация</a></li>
                     {% endif %}
                 </ul>
             </div>
         </div>
     </nav>
 
-    <!-- Main Content -->
+    <!-- Основное содержимое -->
     <div class="container mt-4">
         <div class="row justify-content-center">
             <div class="col-lg-9">
 
-                <!-- Back button and title -->
+                <!-- Кнопка назад и заголовок -->
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <a href="{% url 'problem_detail' submission.problem.id %}" class="btn btn-outline-secondary btn-sm">
-                        <i class="fas fa-arrow-left me-1"></i> Back to Problem
+                        <i class="fas fa-arrow-left me-1"></i> Назад к задаче
                     </a>
                     <span class="text-muted small">
-                        <i class="far fa-clock me-1"></i>{{ submission.submitted_at|date:"M d, Y H:i" }}
+                        <i class="far fa-clock me-1"></i>{{ submission.submitted_at|date:"d.m.Y H:i" }}
                     </span>
                 </div>
 
-                <h2 class="mb-3"><i class="fas fa-file-alt me-2 text-primary"></i>Submission Result</h2>
+                <h2 class="mb-3"><i class="fas fa-file-alt me-2 text-primary"></i>Результат посылки</h2>
 
-                <!-- Verdict Header -->
+                <!-- Заголовок вердикта -->
                 <div class="card result-card border-0">
                     {% if submission.verdict == 'accepted' %}
                         <div class="verdict-accepted d-flex align-items-center">
                             <i class="fas fa-check-circle verdict-icon"></i>
                             <div>
-                                <h3 class="mb-0 fw-bold">Accepted</h3>
-                                <p class="mb-0">All test cases passed successfully!</p>
+                                <h3 class="mb-0 fw-bold">Принято</h3>
+                                <p class="mb-0">Все тестовые примеры пройдены успешно!</p>
                             </div>
                         </div>
                     {% elif submission.verdict == 'wrong_answer' %}
                         <div class="verdict-wrong d-flex align-items-center">
                             <i class="fas fa-times-circle verdict-icon"></i>
                             <div>
-                                <h3 class="mb-0 fw-bold">Wrong Answer</h3>
-                                <p class="mb-0">Some test cases did not pass.</p>
+                                <h3 class="mb-0 fw-bold">Неверный ответ</h3>
+                                <p class="mb-0">Некоторые тестовые примеры не пройдены.</p>
                             </div>
                         </div>
                     {% else %}
@@ -258,53 +258,53 @@
                             <i class="fas fa-hourglass-half verdict-icon"></i>
                             <div>
                                 <h3 class="mb-0 fw-bold">{{ submission.verdict|title }}</h3>
-                                <p class="mb-0">Submission status.</p>
+                                <p class="mb-0">Статус посылки.</p>
                             </div>
                         </div>
                     {% endif %}
 
                     <div class="p-4 bg-white">
-                        <!-- Stats Row -->
+                        <!-- Строка статистики -->
                         <div class="row text-center mb-4">
                             <div class="col-md-4 mb-2">
                                 <span class="stat-badge d-block py-2">
                                     <i class="fas fa-check-circle text-success me-1"></i>
-                                    <strong>{{ submission.test_cases_passed }}</strong> / {{ submission.total_test_cases }} Passed
+                                    <strong>{{ submission.test_cases_passed }}</strong> / {{ submission.total_test_cases }} пройдено
                                 </span>
                             </div>
                             <div class="col-md-4 mb-2">
                                 <span class="stat-badge d-block py-2">
                                     <i class="fas fa-code me-1 text-primary"></i>
-                                    Language: <strong>{{ submission.language|title }}</strong>
+                                    Язык: <strong>{{ submission.language|title }}</strong>
                                 </span>
                             </div>
                             <div class="col-md-4 mb-2">
                                 <span class="stat-badge d-block py-2">
                                     <i class="fas fa-list-ol me-1 text-warning"></i>
-                                    Problem: <strong>{{ submission.problem.title }}</strong>
+                                    Задача: <strong>{{ submission.problem.title }}</strong>
                                 </span>
                             </div>
                         </div>
 
-                        <!-- Test Cases Breakdown (if details are available, but we don't have them in context, we show a general message) -->
+                        <!-- Разбор тестовых примеров -->
                         <div class="mt-4">
-                            <h5 class="mb-3"><i class="fas fa-vial me-2"></i>Test Cases Overview</h5>
+                            <h5 class="mb-3"><i class="fas fa-vial me-2"></i>Обзор тестовых примеров</h5>
                             {% if submission.verdict == 'accepted' %}
                                 <div class="alert alert-success py-2">
-                                    <i class="fas fa-check me-2"></i>All {{ submission.total_test_cases }} test case(s) passed.
+                                    <i class="fas fa-check me-2"></i>Все {{ submission.total_test_cases }} тестовых примеров пройдены.
                                 </div>
                             {% else %}
                                 <div class="alert alert-warning py-2">
-                                    <i class="fas fa-exclamation-triangle me-2"></i> {{ submission.test_cases_passed }} out of {{ submission.total_test_cases }} test cases passed.
+                                    <i class="fas fa-exclamation-triangle me-2"></i> {{ submission.test_cases_passed }} из {{ submission.total_test_cases }} тестовых примеров пройдено.
                                     {% if submission.test_cases_passed == 0 %}
-                                        No test cases passed.
+                                        Ни один тестовый пример не пройден.
                                     {% else %}
-                                        Some test cases failed.
+                                        Некоторые тестовые примеры не пройдены.
                                     {% endif %}
                                 </div>
                             {% endif %}
 
-                            <!-- We don't have per-test-case details in this template, but we can show a simple progress bar -->
+                            <!-- Прогресс-бар -->
                             <div class="progress mb-3" style="height: 8px;">
                                 {% if submission.total_test_cases > 0 %}
                                     {% with pass_percent=submission.test_cases_passed|floatformat:0 %}
@@ -318,32 +318,32 @@
                                 {% endif %}
                             </div>
                             <small class="text-muted">
-                                Passed {{ submission.test_cases_passed }} of {{ submission.total_test_cases }} test cases.
+                                Пройдено {{ submission.test_cases_passed }} из {{ submission.total_test_cases }} тестовых примеров.
                             </small>
                         </div>
 
-                        <!-- Action Buttons -->
+                        <!-- Кнопки действий -->
                         <div class="d-flex flex-wrap gap-2 mt-4 pt-3 border-top">
                             <a href="{% url 'problem_detail' submission.problem.id %}" class="btn btn-outline-primary">
-                                <i class="fas fa-arrow-left me-1"></i> Back to Problem
+                                <i class="fas fa-arrow-left me-1"></i> Назад к задаче
                             </a>
                             <a href="{% url 'submit_solution' submission.problem.id %}" class="btn btn-primary">
-                                <i class="fas fa-redo me-1"></i> Submit Again
+                                <i class="fas fa-redo me-1"></i> Отправить снова
                             </a>
                             <a href="{% url 'submissions' %}" class="btn btn-outline-secondary">
-                                <i class="fas fa-list me-1"></i> All Submissions
+                                <i class="fas fa-list me-1"></i> Все посылки
                             </a>
                         </div>
                     </div>
                 </div>
 
-                <!-- Optional: Show a hint message if wrong answer, that's all we can do without per-test details -->
+                <!-- Подсказка при неверном ответе -->
                 {% if submission.verdict == 'wrong_answer' %}
                 <div class="alert alert-info mt-3 d-flex align-items-start">
                     <i class="fas fa-lightbulb me-2 mt-1"></i>
                     <div>
-                        <strong>Hint:</strong> Review your algorithm and edge cases. Check if your output matches expected format exactly (including spaces and newlines).
-                        You can also look at public test cases on the problem page.
+                        <strong>Подсказка:</strong> Проверьте свой алгоритм и граничные случаи. Убедитесь, что ваш вывод точно соответствует ожидаемому формату (включая пробелы и переводы строк).
+                        Также вы можете посмотреть публичные тестовые примеры на странице задачи.
                     </div>
                 </div>
                 {% endif %}
@@ -351,13 +351,13 @@
         </div>
     </div>
 
-    <!-- Footer (simplified) -->
+    <!-- Подвал (упрощённый) -->
     <footer class="footer mt-5">
         <div class="container text-center">
-            <p class="mb-0">&copy; 2025 CodeSport. All rights reserved. |
-                <a href="#" class="me-2">Privacy</a>
-                <a href="#" class="me-2">Terms</a>
-                <a href="{% url 'about' %}">About</a>
+            <p class="mb-0">&copy; 2025 CodeSport. Все права защищены. |
+                <a href="#" class="me-2">Конфиденциальность</a>
+                <a href="#" class="me-2">Условия</a>
+                <a href="{% url 'about' %}">О нас</a>
             </p>
         </div>
     </footer>

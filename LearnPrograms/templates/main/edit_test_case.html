@@ -1,30 +1,30 @@
 {% extends 'base.html' %}
 
-{% block title %}CodeSport - Edit Test Case{% endblock %}
+{% block title %}CodeSport - Редактировать тестовый пример{% endblock %}
 
 {% block content %}
 <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h1>Edit Test Case</h1>
-            <p class="text-muted mb-0">For problem: {{ problem.title }}</p>
+            <h1>Редактировать тестовый пример</h1>
+            <p class="text-muted mb-0">Для задачи: {{ problem.title }}</p>
         </div>
-        <a href="{% url 'add_test_cases' problem.id %}" class="btn btn-outline-secondary">Back to Test Cases</a>
+        <a href="{% url 'add_test_cases' problem.id %}" class="btn btn-outline-secondary">Назад к тестовым примерам</a>
     </div>
 
     <div class="row justify-content-center">
         <div class="col-lg-8">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="mb-0">Test Case Details</h5>
+                    <h5 class="mb-0">Детали тестового примера</h5>
                 </div>
                 <div class="card-body">
                     <form method="post">
                         {% csrf_token %}
-                        
+
                         {% if form.errors %}
                         <div class="alert alert-danger">
-                            <strong>Please correct the errors below:</strong>
+                            <strong>Пожалуйста, исправьте ошибки ниже:</strong>
                             <ul>
                                 {% for field in form %}
                                     {% for error in field.errors %}
@@ -37,25 +37,25 @@
                             </ul>
                         </div>
                         {% endif %}
-                        
+
                         <div class="mb-3">
-                            <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
+                            <label for="{{ form.description.id_for_label }}" class="form-label">Описание</label>
                             {{ form.description }}
                         </div>
-                        
+
                         <div class="mb-3">
-                            <label for="{{ form.input.id_for_label }}" class="form-label">Input</label>
+                            <label for="{{ form.input.id_for_label }}" class="form-label">Ввод</label>
                             {{ form.input }}
                         </div>
-                        
+
                         <div class="mb-3">
-                            <label for="{{ form.expected_output.id_for_label }}" class="form-label">Expected Output</label>
+                            <label for="{{ form.expected_output.id_for_label }}" class="form-label">Ожидаемый вывод</label>
                             {{ form.expected_output }}
                         </div>
-                        
+
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label for="{{ form.order.id_for_label }}" class="form-label">Order</label>
+                                <label for="{{ form.order.id_for_label }}" class="form-label">Порядок</label>
                                 {{ form.order }}
                             </div>
                             <div class="col-md-6 mb-3">
@@ -67,10 +67,10 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <a href="{% url 'add_test_cases' problem.id %}" class="btn btn-secondary me-md-2">Cancel</a>
-                            <button type="submit" class="btn btn-primary">Update Test Case</button>
+                            <a href="{% url 'add_test_cases' problem.id %}" class="btn btn-secondary me-md-2">Отмена</a>
+                            <button type="submit" class="btn btn-primary">Обновить тестовый пример</button>
                         </div>
                     </form>
                 </div>

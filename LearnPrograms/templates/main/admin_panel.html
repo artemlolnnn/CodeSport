@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel - CodeSport</title>
+    <title>Админ-панель - CodeSport</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -228,7 +228,7 @@
 </head>
 <body>
 
-    <!-- Navigation Bar -->
+    <!-- Навигационная панель -->
     <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
         <div class="container">
             <a class="navbar-brand" href="{% url 'home' %}">
@@ -241,14 +241,14 @@
 
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
-                    <li class="nav-item"><a class="nav-link" href="{% url 'home' %}">Home</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'problems' %}">Problems</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'contests' %}">Contests</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'leaderboard' %}">Leaderboard</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'about' %}">About</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'home' %}">Главная</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'problems' %}">Задачи</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'contests' %}">Соревнования</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'leaderboard' %}">Таблица лидеров</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'about' %}">О нас</a></li>
                     {% if user.username == 'CodeSupportOfficial' %}
                     <li class="nav-item"><a class="nav-link active" href="{% url 'admin_panel' %}">
-                        <i class="fas fa-shield-alt me-1"></i>Admin Panel
+                        <i class="fas fa-shield-alt me-1"></i>Админ-панель
                     </a></li>
                     {% endif %}
                 </ul>
@@ -259,113 +259,113 @@
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-user-circle me-1"></i> {{ user.username }}
                             {% if user.username == 'CodeSupportOfficial' %}
-                            <span class="special-badge ms-1">👑 Support Admin</span>
+                            <span class="special-badge ms-1">👑 Админ поддержки</span>
                             {% endif %}
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{% url 'profile' %}">Profile</a></li>
-                            <li><a class="dropdown-item" href="{% url 'submissions' %}">Submissions</a></li>
+                            <li><a class="dropdown-item" href="{% url 'profile' %}">Профиль</a></li>
+                            <li><a class="dropdown-item" href="{% url 'submissions' %}">Посылки</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{% url 'user_problems' %}">My Problems</a></li>
+                            <li><a class="dropdown-item" href="{% url 'user_problems' %}">Мои задачи</a></li>
                             {% if user.username == 'CodeSupportOfficial' %}
                             <li><a class="dropdown-item" href="{% url 'admin_panel' %}">
-                                <i class="fas fa-shield-alt me-1"></i>Admin Panel
+                                <i class="fas fa-shield-alt me-1"></i>Админ-панель
                             </a></li>
                             {% endif %}
-                            <li><a class="dropdown-item" href="{% url 'logout' %}">Logout</a></li>
+                            <li><a class="dropdown-item" href="{% url 'logout' %}">Выход</a></li>
                         </ul>
                     </li>
                     {% else %}
-                    <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Login</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Register</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Вход</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Регистрация</a></li>
                     {% endif %}
                 </ul>
             </div>
         </div>
     </nav>
 
-    <!-- Admin Header -->
+    <!-- Шапка админ-панели -->
     <div class="admin-header">
         <div class="container">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h1><i class="fas fa-crown me-2"></i>Admin Panel</h1>
-                    <p class="mb-0">Welcome back, <strong>CodeSupportOfficial</strong>! You have full control.</p>
+                    <h1><i class="fas fa-crown me-2"></i>Админ-панель</h1>
+                    <p class="mb-0">С возвращением, <strong>CodeSupportOfficial</strong>! У вас полный доступ.</p>
                 </div>
                 <span class="admin-badge">
-                    <i class="fas fa-lock me-1"></i>Exclusive Access
+                    <i class="fas fa-lock me-1"></i>Эксклюзивный доступ
                 </span>
             </div>
         </div>
     </div>
 
-    <!-- Main Content -->
+    <!-- Основное содержимое -->
     <div class="container">
-        <!-- Statistics Cards -->
+        <!-- Карточки статистики -->
         <div class="row g-4 mb-4">
             <div class="col-md-3 col-sm-6">
                 <div class="stat-card">
                     <div class="stat-number">{{ total_problems }}</div>
-                    <div class="stat-label">Total Problems</div>
+                    <div class="stat-label">Всего задач</div>
                 </div>
             </div>
             <div class="col-md-3 col-sm-6">
                 <div class="stat-card">
                     <div class="stat-number">{{ total_users }}</div>
-                    <div class="stat-label">Total Users</div>
+                    <div class="stat-label">Всего пользователей</div>
                 </div>
             </div>
             <div class="col-md-3 col-sm-6">
                 <div class="stat-card">
                     <div class="stat-number text-success">{{ total_submissions }}</div>
-                    <div class="stat-label">Submissions</div>
+                    <div class="stat-label">Посылок</div>
                 </div>
             </div>
             <div class="col-md-3 col-sm-6">
                 <div class="stat-card">
                     <div class="stat-number text-warning">{{ active_users }}</div>
-                    <div class="stat-label">Active Users</div>
+                    <div class="stat-label">Активных пользователей</div>
                 </div>
             </div>
         </div>
 
-        <!-- Quick Actions -->
+        <!-- Быстрые действия -->
         <div class="admin-section mb-4">
             <div class="admin-section-header">
-                <span><i class="fas fa-bolt me-2"></i>Quick Actions</span>
+                <span><i class="fas fa-bolt me-2"></i>Быстрые действия</span>
             </div>
             <div class="p-3">
                 <div class="quick-actions">
                     <a href="{% url 'create_problem' %}" class="btn btn-special">
-                        <i class="fas fa-plus me-1"></i>Create Problem
+                        <i class="fas fa-plus me-1"></i>Создать задачу
                     </a>
                     <a href="{% url 'problems' %}" class="btn btn-primary">
-                        <i class="fas fa-list me-1"></i>View All Problems
+                        <i class="fas fa-list me-1"></i>Все задачи
                     </a>
                     <a href="{% url 'submissions' %}" class="btn btn-info">
-                        <i class="fas fa-history me-1"></i>View Submissions
+                        <i class="fas fa-history me-1"></i>Просмотр посылок
                     </a>
                     <button class="btn btn-warning" onclick="exportData()">
-                        <i class="fas fa-download me-1"></i>Export Data
+                        <i class="fas fa-download me-1"></i>Экспорт данных
                     </button>
                     <button class="btn btn-danger" onclick="clearCache()">
-                        <i class="fas fa-broom me-1"></i>Clear Cache
+                        <i class="fas fa-broom me-1"></i>Очистить кэш
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- Problems Management Section -->
+        <!-- Секция управления задачами -->
         <div class="admin-section">
             <div class="admin-section-header">
-                <span><i class="fas fa-file-code me-2"></i>Problems Management</span>
+                <span><i class="fas fa-file-code me-2"></i>Управление задачами</span>
                 <div>
-                    <input type="text" class="search-box" placeholder="Search problems..." id="problemSearch">
+                    <input type="text" class="search-box" placeholder="Поиск задач..." id="problemSearch">
                     <select class="filter-select ms-2" id="difficultyFilter">
-                        <option value="">All Difficulties</option>
-                        <option value="easy">Easy</option>
-                        <option value="medium">Medium</option>
-                        <option value="hard">Hard</option>
+                        <option value="">Все сложности</option>
+                        <option value="easy">Лёгкая</option>
+                        <option value="medium">Средняя</option>
+                        <option value="hard">Сложная</option>
                     </select>
                 </div>
             </div>
@@ -374,12 +374,12 @@
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Title</th>
-                            <th>Author</th>
-                            <th>Difficulty</th>
-                            <th>Created</th>
-                            <th>Submissions</th>
-                            <th>Actions</th>
+                            <th>Название</th>
+                            <th>Автор</th>
+                            <th>Сложность</th>
+                            <th>Создано</th>
+                            <th>Посылки</th>
+                            <th>Действия</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -394,27 +394,30 @@
                             <td>{{ problem.author.username }}</td>
                             <td>
                                 <span class="badge bg-{{ problem.difficulty }}">
-                                    {{ problem.difficulty|title }}
+                                    {% if problem.difficulty == 'easy' %}Лёгкая
+                                    {% elif problem.difficulty == 'medium' %}Средняя
+                                    {% elif problem.difficulty == 'hard' %}Сложная
+                                    {% else %}{{ problem.difficulty|title }}{% endif %}
                                 </span>
                             </td>
-                            <td>{{ problem.created_at|date:"M d, Y" }}</td>
+                            <td>{{ problem.created_at|date:"d.m.Y" }}</td>
                             <td>{{ problem.submission_set.count }}</td>
                             <td>
                                 <a href="{% url 'edit_problem' problem.id %}" class="btn btn-sm btn-outline-primary btn-action">
-                                    <i class="fas fa-edit"></i> Edit
+                                    <i class="fas fa-edit"></i> Редактировать
                                 </a>
                                 <a href="{% url 'add_test_cases' problem.id %}" class="btn btn-sm btn-outline-info btn-action">
-                                    <i class="fas fa-vial"></i> Test Cases
+                                    <i class="fas fa-vial"></i> Тесты
                                 </a>
                                 <button class="btn btn-sm btn-outline-danger btn-action" onclick="deleteProblem({{ problem.id }})">
-                                    <i class="fas fa-trash"></i> Delete
+                                    <i class="fas fa-trash"></i> Удалить
                                 </button>
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
                             <td colspan="7" class="text-center py-4 text-muted">
-                                No problems found
+                                Задачи не найдены
                             </td>
                         </tr>
                         {% endfor %}
@@ -423,12 +426,12 @@
             </div>
         </div>
 
-        <!-- Users Management Section -->
+        <!-- Секция управления пользователями -->
         <div class="admin-section">
             <div class="admin-section-header">
-                <span><i class="fas fa-users me-2"></i>Users Management</span>
+                <span><i class="fas fa-users me-2"></i>Управление пользователями</span>
                 <div>
-                    <input type="text" class="search-box" placeholder="Search users..." id="userSearch">
+                    <input type="text" class="search-box" placeholder="Поиск пользователей..." id="userSearch">
                 </div>
             </div>
             <div class="table-responsive">
@@ -436,11 +439,11 @@
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Username</th>
+                            <th>Имя пользователя</th>
                             <th>Email</th>
-                            <th>Status</th>
-                            <th>Date Joined</th>
-                            <th>Actions</th>
+                            <th>Статус</th>
+                            <th>Дата регистрации</th>
+                            <th>Действия</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -450,28 +453,28 @@
                             <td>
                                 {{ user.username }}
                                 {% if user.username == 'CodeSupportOfficial' %}
-                                <span class="special-badge ms-1">👑 Support Admin</span>
+                                <span class="special-badge ms-1">👑 Админ поддержки</span>
                                 {% endif %}
                             </td>
                             <td>{{ user.email }}</td>
                             <td>
                                 {% if user.is_staff %}
-                                <span class="badge bg-danger">Admin</span>
+                                <span class="badge bg-danger">Администратор</span>
                                 {% else %}
-                                <span class="badge bg-secondary">User</span>
+                                <span class="badge bg-secondary">Пользователь</span>
                                 {% endif %}
                             </td>
-                            <td>{{ user.date_joined|date:"M d, Y" }}</td>
+                            <td>{{ user.date_joined|date:"d.m.Y" }}</td>
                             <td>
                                 <a href="{% url 'user_profile' user.username %}" class="btn btn-sm btn-outline-info btn-action">
-                                    <i class="fas fa-eye"></i> View
+                                    <i class="fas fa-eye"></i> Просмотр
                                 </a>
                                 {% if user.username != 'CodeSupportOfficial' %}
                                 <button class="btn btn-sm btn-outline-warning btn-action" onclick="toggleStaff({{ user.id }})">
-                                    <i class="fas fa-user-shield"></i> Toggle Admin
+                                    <i class="fas fa-user-shield"></i> Переключить админа
                                 </button>
                                 <button class="btn btn-sm btn-outline-danger btn-action" onclick="deleteUser({{ user.id }})">
-                                    <i class="fas fa-user-slash"></i> Delete
+                                    <i class="fas fa-user-slash"></i> Удалить
                                 </button>
                                 {% endif %}
                             </td>
@@ -479,7 +482,7 @@
                         {% empty %}
                         <tr>
                             <td colspan="6" class="text-center py-4 text-muted">
-                                No users found
+                                Пользователи не найдены
                             </td>
                         </tr>
                         {% endfor %}
@@ -488,20 +491,20 @@
             </div>
         </div>
 
-        <!-- Recent Submissions Section -->
+        <!-- Секция последних посылок -->
         <div class="admin-section">
             <div class="admin-section-header">
-                <span><i class="fas fa-history me-2"></i>Recent Submissions</span>
+                <span><i class="fas fa-history me-2"></i>Последние посылки</span>
             </div>
             <div class="table-responsive">
                 <table class="table table-hover">
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>User</th>
-                            <th>Problem</th>
-                            <th>Verdict</th>
-                            <th>Submitted At</th>
+                            <th>Пользователь</th>
+                            <th>Задача</th>
+                            <th>Вердикт</th>
+                            <th>Отправлено</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -512,15 +515,20 @@
                             <td>{{ submission.problem.title }}</td>
                             <td>
                                 <span class="verdict-badge verdict-{{ submission.verdict }}">
-                                    {{ submission.verdict|title }}
+                                    {% if submission.verdict == 'accepted' %}Принято
+                                    {% elif submission.verdict == 'wrong_answer' %}Неверный ответ
+                                    {% elif submission.verdict == 'time_limit_exceeded' %}Превышено время
+                                    {% elif submission.verdict == 'runtime_error' %}Ошибка выполнения
+                                    {% elif submission.verdict == 'compilation_error' %}Ошибка компиляции
+                                    {% else %}{{ submission.verdict|title }}{% endif %}
                                 </span>
                             </td>
-                            <td>{{ submission.submitted_at|date:"M d, Y H:i" }}</td>
+                            <td>{{ submission.submitted_at|date:"d.m.Y H:i" }}</td>
                         </tr>
                         {% empty %}
                         <tr>
                             <td colspan="5" class="text-center py-4 text-muted">
-                                No submissions found
+                                Посылки не найдены
                             </td>
                         </tr>
                         {% endfor %}
@@ -530,13 +538,13 @@
         </div>
     </div>
 
-    <!-- Footer -->
+    <!-- Подвал -->
     <footer class="footer mt-5">
         <div class="container text-center">
-            <p class="mb-0">&copy; 2025 CodeSport. All rights reserved. |
-                <a href="#" class="me-2">Privacy</a>
-                <a href="#" class="me-2">Terms</a>
-                <a href="{% url 'about' %}">About</a>
+            <p class="mb-0">&copy; 2025 CodeSport. Все права защищены. |
+                <a href="#" class="me-2">Конфиденциальность</a>
+                <a href="#" class="me-2">Условия</a>
+                <a href="{% url 'about' %}">О нас</a>
             </p>
         </div>
     </footer>
@@ -546,7 +554,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
 
     <script>
-        // Search functionality
+        // Функция поиска
         document.getElementById('problemSearch')?.addEventListener('input', function() {
             const searchTerm = this.value.toLowerCase();
             const rows = document.querySelectorAll('.problem-row');
@@ -563,7 +571,7 @@
             });
         });
 
-        // Difficulty filter
+        // Фильтр по сложности
         document.getElementById('difficultyFilter')?.addEventListener('change', function() {
             const filter = this.value;
             const rows = document.querySelectorAll('.problem-row');
@@ -577,10 +585,10 @@
             });
         });
 
-        // User search
+        // Поиск пользователей
         document.getElementById('userSearch')?.addEventListener('input', function() {
             const searchTerm = this.value.toLowerCase();
-            const table = document.querySelectorAll('.admin-section')[1]; // Users section
+            const table = document.querySelectorAll('.admin-section')[1]; // Секция пользователей
             const rows = table?.querySelectorAll('tbody tr');
 
             rows?.forEach(row => {
@@ -596,7 +604,7 @@
         });
 
         function deleteProblem(problemId) {
-            if (confirm('Are you sure you want to delete this problem?')) {
+            if (confirm('Вы уверены, что хотите удалить эту задачу?')) {
                 fetch(`/control-panel/delete-problem/${problemId}/`, {
                     method: 'POST',
                     headers: {
@@ -608,14 +616,14 @@
                     if (data.success) {
                         location.reload();
                     } else {
-                        alert(data.message || 'Failed to delete problem');
+                        alert(data.message || 'Не удалось удалить задачу');
                     }
                 });
             }
         }
 
         function deleteUser(userId) {
-            if (confirm('Are you sure you want to delete this user?')) {
+            if (confirm('Вы уверены, что хотите удалить этого пользователя?')) {
                 fetch(`/control-panel/delete-user/${userId}/`, {
                     method: 'POST',
                     headers: {
@@ -627,14 +635,14 @@
                     if (data.success) {
                         location.reload();
                     } else {
-                        alert(data.message || 'Failed to delete user');
+                        alert(data.message || 'Не удалось удалить пользователя');
                     }
                 });
             }
         }
 
         function toggleStaff(userId) {
-            // Get CSRF token
+            // Получение CSRF токена
             const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
             fetch(`/control-panel/toggle-staff/${userId}/`, {
@@ -647,33 +655,33 @@
             })
             .then(response => {
                 if (!response.ok) {
-                    throw new Error('Network response was not ok');
+                    throw new Error('Ошибка сети');
                 }
                 return response.json();
             })
             .then(data => {
                 if (data.success) {
-                    // Show success message
-                    alert(data.message || 'Admin status updated successfully');
-                    // Reload the page to reflect changes
+                    // Показать сообщение об успехе
+                    alert(data.message || 'Статус администратора успешно обновлён');
+                    // Перезагрузить страницу для отображения изменений
                     location.reload();
                 } else {
-                    alert(data.message || 'Failed to toggle admin status');
+                    alert(data.message || 'Не удалось переключить статус администратора');
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred. Please try again.');
+                console.error('Ошибка:', error);
+                alert('Произошла ошибка. Пожалуйста, попробуйте снова.');
             });
         }
 
         function exportData() {
-            alert('Export functionality coming soon!');
+            alert('Функция экспорта появится в ближайшее время!');
         }
 
         function clearCache() {
-            if (confirm('Clear application cache?')) {
-                alert('Cache cleared successfully!');
+            if (confirm('Очистить кэш приложения?')) {
+                alert('Кэш успешно очищен!');
             }
         }
     </script>

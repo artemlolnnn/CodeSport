@@ -1,13 +1,13 @@
 {% extends 'base.html' %}
 
-{% block title %}CodeSport - Problems{% endblock %}
+{% block title %}CodeSport - Задачи{% endblock %}
 
 {% block content %}
 <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Problems</h1>
+        <h1>Задачи</h1>
         <a href="{% url 'create_problem' %}" class="btn btn-primary">
-            <i class="fas fa-plus me-2"></i>Create Problem
+            <i class="fas fa-plus me-2"></i>Создать задачу
         </a>
     </div>
 
@@ -16,7 +16,7 @@
             <div class="row">
                 <div class="col-md-8">
                     <div class="input-group">
-                        <input type="text" class="form-control" placeholder="Search problems..." id="searchInput">
+                        <input type="text" class="form-control" placeholder="Поиск задач..." id="searchInput">
                         <button class="btn btn-outline-secondary" type="button" id="searchButton">
                             <i class="fas fa-search"></i>
                         </button>
@@ -24,10 +24,10 @@
                 </div>
                 <div class="col-md-4">
                     <select class="form-select" id="difficultyFilter">
-                        <option value="">All Difficulties</option>
-                        <option value="easy">Easy</option>
-                        <option value="medium">Medium</option>
-                        <option value="hard">Hard</option>
+                        <option value="">Все сложности</option>
+                        <option value="easy">Лёгкая</option>
+                        <option value="medium">Средняя</option>
+                        <option value="hard">Сложная</option>
                     </select>
                 </div>
             </div>
@@ -41,15 +41,15 @@
                     <thead class="table-dark">
                         <tr>
                             <th scope="col" style="width: 5%;">#</th>
-                            <th scope="col" style="width: 45%;">Problem</th>
-                            <th scope="col" style="width: 15%;">Difficulty</th>
-                            <th scope="col" style="width: 15%;">Submissions</th>
-                            <th scope="col" style="width: 20%;">Action</th>
+                            <th scope="col" style="width: 45%;">Задача</th>
+                            <th scope="col" style="width: 15%;">Сложность</th>
+                            <th scope="col" style="width: 15%;">Посылки</th>
+                            <th scope="col" style="width: 20%;">Действие</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for problem in problems %}
-                        <tr>
+                        <tr data-difficulty="{{ problem.difficulty }}">
                             <th scope="row">{{ forloop.counter }}</th>
                             <td>
                                 <a href="{% url 'problem_detail' problem.id %}" class="text-decoration-none text-dark fw-bold">
@@ -58,24 +58,24 @@
                             </td>
                             <td>
                                 {% if problem.difficulty == 'easy' %}
-                                <span class="badge bg-success">Easy</span>
+                                <span class="badge bg-success">Лёгкая</span>
                                 {% elif problem.difficulty == 'medium' %}
-                                <span class="badge bg-warning">Medium</span>
+                                <span class="badge bg-warning">Средняя</span>
                                 {% else %}
-                                <span class="badge bg-danger">Hard</span>
+                                <span class="badge bg-danger">Сложная</span>
                                 {% endif %}
                             </td>
                             <td>
-                                <span class="text-muted">{{ problem.submission_set.count }} submissions</span>
+                                <span class="text-muted">{{ problem.submission_set.count }} посылок</span>
                             </td>
                             <td>
-                                <a href="{% url 'problem_detail' problem.id %}" class="btn btn-sm btn-outline-primary me-1">View</a>
-                                <a href="{% url 'submit_solution' problem.id %}" class="btn btn-sm btn-primary">Solve</a>
+                                <a href="{% url 'problem_detail' problem.id %}" class="btn btn-sm btn-outline-primary me-1">Просмотр</a>
+                                <a href="{% url 'submit_solution' problem.id %}" class="btn btn-sm btn-primary">Решить</a>
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="5" class="text-center py-4">No problems available yet. <a href="{% url 'create_problem' %}">Create the first one!</a></td>
+                            <td colspan="5" class="text-center py-4">Пока нет доступных задач. <a href="{% url 'create_problem' %}">Создайте первую!</a></td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -93,18 +93,18 @@
         const searchButton = document.getElementById('searchButton');
         const difficultyFilter = document.getElementById('difficultyFilter');
         const tableRows = document.querySelectorAll('tbody tr');
-        
+
         function filterProblems() {
             const searchText = searchInput.value.toLowerCase();
             const difficultyValue = difficultyFilter.value;
-            
+
             tableRows.forEach(row => {
                 const title = row.querySelector('td a').textContent.toLowerCase();
-                const difficulty = row.querySelector('td .badge').textContent.toLowerCase();
-                
+                const difficulty = row.dataset.difficulty; // используем data-атрибут
+
                 const matchesSearch = title.includes(searchText);
                 const matchesDifficulty = difficultyValue === '' || difficulty === difficultyValue;
-                
+
                 if (matchesSearch && matchesDifficulty) {
                     row.style.display = '';
                 } else {
@@ -112,7 +112,7 @@
                 }
             });
         }
-        
+
         searchInput.addEventListener('input', filterProblems);
         searchButton.addEventListener('click', filterProblems);
         difficultyFilter.addEventListener('change', filterProblems);

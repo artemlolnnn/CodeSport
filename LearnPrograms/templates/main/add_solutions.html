@@ -1,20 +1,20 @@
 {% extends 'base.html' %}
 
-{% block title %}CodeSport - Solutions for {{ problem.title }}{% endblock %}
+{% block title %}CodeSport - Решения для {{ problem.title }}{% endblock %}
 
 {% block content %}
 <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h1>Solutions for {{ problem.title }}</h1>
+            <h1>Решения для {{ problem.title }}</h1>
             <p class="text-muted mb-0">
-                Created by {{ problem.author.username }}
+                Создано {{ problem.author.username }}
                 {% if is_owner %}
-                <span class="badge bg-info ms-2">Your Problem</span>
+                <span class="badge bg-info ms-2">Ваша задача</span>
                 {% endif %}
             </p>
         </div>
-        <a href="{% url 'problem_detail' problem.id %}" class="btn btn-outline-secondary">Back to Problem</a>
+        <a href="{% url 'problem_detail' problem.id %}" class="btn btn-outline-secondary">Назад к задаче</a>
     </div>
 
     <div class="row">
@@ -22,39 +22,39 @@
         <div class="col-lg-5">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="mb-0">Add New Solution</h5>
+                    <h5 class="mb-0">Добавить новое решение</h5>
                 </div>
                 <div class="card-body">
                     <form method="post">
                         {% csrf_token %}
                         <div class="mb-3">
-                            <label for="{{ form.language.id_for_label }}" class="form-label">Language</label>
+                            <label for="{{ form.language.id_for_label }}" class="form-label">Язык</label>
                             {{ form.language }}
                         </div>
                         <div class="mb-3">
-                            <label for="{{ form.code.id_for_label }}" class="form-label">Solution Code</label>
+                            <label for="{{ form.code.id_for_label }}" class="form-label">Код решения</label>
                             {{ form.code }}
                         </div>
                         <div class="mb-3 form-check">
                             {{ form.is_public }}
                             <label class="form-check-label" for="{{ form.is_public.id_for_label }}">
-                                Make this solution public
+                                Сделать это решение публичным
                             </label>
                         </div>
                         <div class="d-grid">
-                            <button type="submit" class="btn btn-primary">Add Solution</button>
+                            <button type="submit" class="btn btn-primary">Добавить решение</button>
                         </div>
                     </form>
                 </div>
             </div>
-            
+
             <div class="card mt-4">
                 <div class="card-header">
-                    <h5 class="mb-0">Quick Actions</h5>
+                    <h5 class="mb-0">Быстрые действия</h5>
                 </div>
                 <div class="card-body">
-                    <a href="{% url 'add_test_cases' problem.id %}" class="btn btn-outline-primary w-100 mb-2">Manage Test Cases</a>
-                    <a href="{% url 'user_problems' %}" class="btn btn-outline-secondary w-100">View All My Problems</a>
+                    <a href="{% url 'add_test_cases' problem.id %}" class="btn btn-outline-primary w-100 mb-2">Управление тестовыми примерами</a>
+                    <a href="{% url 'user_problems' %}" class="btn btn-outline-secondary w-100">Все мои задачи</a>
                 </div>
             </div>
         </div>
@@ -62,16 +62,16 @@
         <div class="col-lg-12">
             <div class="alert alert-info">
                 <i class="fas fa-info-circle me-2"></i>
-                Only the problem owner can add solutions to this problem.
+                Только владелец задачи может добавлять решения к этой задаче.
             </div>
         </div>
         {% endif %}
-        
+
         <div class="{% if is_owner %}col-lg-7{% else %}col-lg-12{% endif %}">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Existing Solutions ({{ solutions.count }})</h5>
-                    <span class="badge bg-secondary">{{ public_solutions_count }} public</span>
+                    <h5 class="mb-0">Существующие решения ({{ solutions.count }})</h5>
+                    <span class="badge bg-secondary">{{ public_solutions_count }} публичных</span>
                 </div>
                 <div class="card-body">
                     {% if solutions %}
@@ -79,11 +79,11 @@
                         <table class="table table-sm">
                             <thead>
                                 <tr>
-                                    <th>Language</th>
-                                    <th>Code Preview</th>
-                                    <th>Visibility</th>
+                                    <th>Язык</th>
+                                    <th>Предпросмотр кода</th>
+                                    <th>Видимость</th>
                                     {% if is_owner %}
-                                    <th>Actions</th>
+                                    <th>Действия</th>
                                     {% endif %}
                                 </tr>
                             </thead>
@@ -96,34 +96,34 @@
                                     </td>
                                     <td>
                                         {% if solution.is_public %}
-                                        <span class="badge bg-success">Public</span>
+                                        <span class="badge bg-success">Публичное</span>
                                         {% else %}
-                                        <span class="badge bg-secondary">Private</span>
+                                        <span class="badge bg-secondary">Приватное</span>
                                         {% endif %}
                                     </td>
                                     {% if is_owner %}
                                     <td>
                                         <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#solutionModal{{ solution.id }}">
-                                            View
+                                            Просмотр
                                         </button>
-                                        <a href="#" class="btn btn-sm btn-outline-danger">Delete</a>
+                                        <a href="#" class="btn btn-sm btn-outline-danger">Удалить</a>
                                     </td>
                                     {% endif %}
                                 </tr>
-                                
+
                                 {% if is_owner %}
                                 <div class="modal fade" id="solutionModal{{ solution.id }}" tabindex="-1">
                                     <div class="modal-dialog modal-lg">
                                         <div class="modal-content">
                                             <div class="modal-header">
-                                                <h5 class="modal-title">Solution in {{ solution.get_language_display }}</h5>
+                                                <h5 class="modal-title">Решение на {{ solution.get_language_display }}</h5>
                                                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                             </div>
                                             <div class="modal-body">
                                                 <pre><code class="language-{{ solution.language }}">{{ solution.code }}</code></pre>
                                             </div>
                                             <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
                                             </div>
                                         </div>
                                     </div>
@@ -134,7 +134,7 @@
                         </table>
                     </div>
                     {% else %}
-                    <p class="text-muted text-center">No solutions added yet.</p>
+                    <p class="text-muted text-center">Решения пока не добавлены.</p>
                     {% endif %}
                 </div>
             </div>

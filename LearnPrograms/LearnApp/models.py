@@ -61,7 +61,6 @@ class Submission(models.Model):
         ('python', 'Python'),
         ('cpp', 'C++'),
         ('java', 'Java'),
-        ('javascript', 'JavaScript'),
     ]
     
     problem = models.ForeignKey(Problem, on_delete=models.CASCADE)
